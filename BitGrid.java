@@ -13,12 +13,16 @@ public class BitGrid {
         }
         height = new_height;
         long pixels = ((long) width) * ((long) height);
-        int div = (int) (pixels / 64);
-        long pix_approx = ((long) div) * 64;
-        if(pix_approx < pixels){
-            binData = new long[div + 1];
+        long cells = pixels / 64;
+        if(cells > Integer.MAX_VALUE){
+            throw new IllegalArgumentException("Dimensions of " + width + "x" + height + " would require the storage of " + cells + " longs, which is beyond indexing maximum of " + Integer.MAX_VALUE + ".");
+        }
+        int cells_int = (int) cells;
+        long extra = pixels % 64;
+        if(extra == 0){
+            binData = new long[cells_int];
         } else {
-            binData = new long[div];
+            binData = new long[cells_int + 1];
         }
     }
 
