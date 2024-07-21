@@ -20,7 +20,14 @@ class Main{
             }
         }
         for(int c : colors){
-            System.out.println(leftPad(Integer.toHexString(c), '0', 8));
+            String name = "Debug_" + leftPad(Integer.toHexString(c), '0', 8) + ".png";
+            BitGrid grid = new BitGrid(width, height);
+            for(int y=0; y<height; y++){
+                for(int x=0; x<width; x++){
+                    grid.setBit(x, y, original.getRGB(x, y)==c);
+                }
+            }
+            grid.debugFile(new File(name));
         }
     }
 }

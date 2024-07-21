@@ -1,3 +1,7 @@
+import java.io.*;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+
 public class BitGrid {
     private final int width;
     private final int height;
@@ -66,5 +70,19 @@ public class BitGrid {
     public boolean getBit(int x, int y){
         IndexAndMask spot = indexBit(x, y);
         return (binData[spot.index] & spot.mask) != 0;
+    }
+
+    public void debugFile(File location) throws IOException{
+        BufferedImage canvas = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY);
+        for(int y=0; y<height; y++){
+            for(int x=0; x<width; x++){
+                if(getBit(x, y)){
+                    canvas.setRGB(x, y, -1);
+                } else {
+                    canvas.setRGB(x, y, 0);
+                }
+            }
+        }
+        ImageIO.write(canvas, "PNG", new FileOutputStream(location, false));
     }
 }
