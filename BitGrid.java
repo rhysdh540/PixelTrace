@@ -26,9 +26,7 @@ public class BitGrid {
         }
     }
 
-    //TODO: Refactor the indexing protocol
-
-    public void setBit(int x, int y){
+    private IndexAndMask indexBit(int x, int y){
         if(x < 0){
             throw new IllegalArgumentException("X must be at least 0. \"" + x + "\" was specified.");
         }
@@ -43,6 +41,20 @@ public class BitGrid {
         if(y > yMax){
             throw new IllegalArgumentException("Y must be at most " + yMax + ". \"" + y + "\" was specified.");
         }
-        //Wait just a second...
+        long pixel = ((long) y) * width + x;
+        int index = (int)(pixel / 64);
+        long mask = Long.MIN_VALUE >>> (pixel % 64);
+        return new IndexAndMask(index, mask);
+    }
+
+    public void setBit(int x, int y, boolean value){
+        IndexAndMask spot = indexBit(x, y);
+        if(value){
+            //Writing a 1 into position
+            binData[spot.index] = binData[spot.index] | spot.mask;
+        } else {
+            //Writing a 0 into position
+            binData[spot.index] = (binData[spot.index] | spot.mask) ^ spot.mask;
+        }
     }
 }
