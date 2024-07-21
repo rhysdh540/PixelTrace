@@ -22,6 +22,8 @@ public class BitGrid {
         }
     }
 
+    //TODO: Refactor the indexing protocol
+
     public void setBit(int x, int y){
         if(x < 0){
             throw new IllegalArgumentException("X must be at least 0. \"" + x + "\" was specified.");
@@ -37,5 +39,6 @@ public class BitGrid {
         if(y > yMax){
             throw new IllegalArgumentException("Y must be at most " + yMax + ". \"" + y + "\" was specified.");
         }
+        //Wait just a second...
     }
 }
