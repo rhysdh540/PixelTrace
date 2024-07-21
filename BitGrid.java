@@ -57,4 +57,14 @@ public class BitGrid {
             binData[spot.index] = (binData[spot.index] | spot.mask) ^ spot.mask;
         }
     }
+
+    public void toggleBit(int x, int y){
+        IndexAndMask spot = indexBit(x, y);
+        binData[spot.index] = binData[spot.index] ^ spot.mask;
+    }
+
+    public boolean getBit(int x, int y){
+        IndexAndMask spot = indexBit(x, y);
+        return (binData[spot.index] & spot.mask) != 0;
+    }
 }
