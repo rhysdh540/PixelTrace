@@ -1,5 +1,5 @@
+import java.util.*;
 import java.io.File;
-import java.util.LinkedHashSet;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 
@@ -11,23 +11,20 @@ class Main{
     }
     public static void main(String[] args) throws Exception{
         BufferedImage original = ImageIO.read(new File("TestBitmaps/Lakitu.png"));
-        LinkedHashSet<Integer> colors = new LinkedHashSet<>();
         final int width = original.getWidth();
         final int height = original.getHeight();
-        for(int y=0; y<height; y++){
-            for(int x=0; x<width; x++){
-                colors.add(original.getRGB(x, y));
-            }
-        }
-        for(int c : colors){
-            String name = "Debug_" + leftPad(Integer.toHexString(c), '0', 8) + ".png";
-            BitGrid grid = new BitGrid(width, height);
+        ArrayList<ColorLayer> layers = new ArrayList<>();
+        {
+            LinkedHashSet<Integer> colors = new LinkedHashSet<>();
             for(int y=0; y<height; y++){
                 for(int x=0; x<width; x++){
-                    grid.setBit(x, y, original.getRGB(x, y)==c);
+                    colors.add(original.getRGB(x, y));
                 }
             }
-            grid.debugFile(new File(name));
-        }
+            for(int c : colors){
+                layers.add(new ColorLayer(c, original));
+            }
+        } // Getting the "colors" object out of scope
+        System.gc();
     }
 }
