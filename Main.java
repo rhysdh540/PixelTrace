@@ -26,5 +26,8 @@ class Main{
             }
         } // Getting the "colors" object out of scope
         System.gc();
+        for(ColorLayer layer : layers){
+            System.out.println(layer.debugInfo());
+        }
     }
 }

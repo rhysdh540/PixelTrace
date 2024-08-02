@@ -36,4 +36,27 @@ public class ColorLayer {
         int height = (y_max - y_min) + 1;
         bounding_area = width * height;
     }
+
+    public String debugInfo(){
+        StringBuilder sb = new StringBuilder("====ColorLayer ");
+        sb.append(Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8));
+        sb.append("====");
+        sb.append(System.lineSeparator());
+        sb.append("X: ");
+        sb.append(x_min);
+        sb.append(" -> ");
+        sb.append(x_max);
+        sb.append(System.lineSeparator());
+        sb.append("Y: ");
+        sb.append(y_min);
+        sb.append(" -> ");
+        sb.append(y_max);
+        sb.append(System.lineSeparator());
+        sb.append("Area: ");
+        sb.append(bounding_area);
+        sb.append(" / ");
+        sb.append("Count: ");
+        sb.append(pixel_count);
+        return sb.toString();
+    }
 }
