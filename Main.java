@@ -26,6 +26,7 @@ class Main{
             }
         } // Getting the "colors" object out of scope
         System.gc();
+        Collections.sort(layers);
         for(ColorLayer layer : layers){
             System.out.println(layer.debugInfo());
         }

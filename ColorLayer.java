@@ -1,6 +1,6 @@
 import java.awt.image.BufferedImage;
 
-public class ColorLayer {
+public class ColorLayer implements Comparable<ColorLayer>{
     private final int color;
     private final int x_min;
     private final int x_max;
@@ -58,5 +58,20 @@ public class ColorLayer {
         sb.append("Count: ");
         sb.append(pixel_count);
         return sb.toString();
+    }
+
+    @Override
+    public int compareTo(ColorLayer other) {
+        int area_compare = Integer.compare(other.bounding_area, bounding_area);
+        if(area_compare == 0){
+            int count_compare = Integer.compare(other.pixel_count, pixel_count);
+            if(count_compare == 0){
+                long ext_color_mine = color & 0xFFFFFFFFL;
+                long ext_color_other = other.color & 0xFFFFFFFFL;
+                return Long.compare(ext_color_mine, ext_color_other);
+            }
+            return count_compare;
+        }
+        return area_compare;
     }
 }
