@@ -6,8 +6,8 @@ public class ColorLayer implements Comparable<ColorLayer>{
     private final int x_max;
     private final int y_min;
     private final int y_max;
-    private final int bounding_area;
-    private final int pixel_count;
+    private final long bounding_area;
+    private final long pixel_count;
 
     public ColorLayer(int new_color, BufferedImage bitmap){
         color = new_color;
@@ -15,7 +15,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         int temp_x_max = Integer.MIN_VALUE;
         int temp_y_min = Integer.MAX_VALUE;
         int temp_y_max = Integer.MIN_VALUE;
-        int temp_count = 0;
+        long temp_count = 0;
         for(int y=0; y<bitmap.getHeight(); y++){
             for(int x=0; x<bitmap.getWidth(); x++){
                 if(bitmap.getRGB(x, y) == color){
@@ -32,8 +32,8 @@ public class ColorLayer implements Comparable<ColorLayer>{
         y_min = temp_y_min;
         y_max = temp_y_max;
         pixel_count = temp_count;
-        int width = (x_max - x_min) + 1;
-        int height = (y_max - y_min) + 1;
+        long width = (x_max - x_min) + 1;
+        long height = (y_max - y_min) + 1;
         bounding_area = width * height;
     }
 
@@ -62,13 +62,11 @@ public class ColorLayer implements Comparable<ColorLayer>{
 
     @Override
     public int compareTo(ColorLayer other) {
-        int area_compare = Integer.compare(other.bounding_area, bounding_area);
+        int area_compare = Long.compare(other.bounding_area, bounding_area);
         if(area_compare == 0){
-            int count_compare = Integer.compare(other.pixel_count, pixel_count);
+            int count_compare = Long.compare(other.pixel_count, pixel_count);
             if(count_compare == 0){
-                long ext_color_mine = color & 0xFFFFFFFFL;
-                long ext_color_other = other.color & 0xFFFFFFFFL;
-                return Long.compare(ext_color_mine, ext_color_other);
+                return Integer.compareUnsigned(color, other.color);
             }
             return count_compare;
         }
