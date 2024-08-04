@@ -1,6 +1,8 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 
 public class ColorLayer implements Comparable<ColorLayer>{
     private final int color;
@@ -75,6 +77,20 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return area_compare;
     }
 
+    private void debug_Grid_Output(int[][] grid, String filename){
+        try{
+            PrintStream ps = new PrintStream(new FileOutputStream(filename, false), true);
+            for(int[] row : grid){
+                ps.print(row[0]);
+                for(int i=1; i<row.length; i++){
+                    ps.print(", " + row[i]);
+                }
+                ps.println();
+            }
+            ps.close();
+        } catch (Exception ex){}
+    }
+
     public void trace(BitGrid prevMask, BufferedImage original){
         for(int y=0; y<original.getHeight(); y++){
             for(int x=0; x<original.getWidth(); x++){
@@ -83,5 +99,18 @@ public class ColorLayer implements Comparable<ColorLayer>{
                 }
             }
         }
+        int local_width = (x_max - x_min) + 1;
+        int local_height = (y_max - y_min) + 1;
+        int[][] grid = new int[local_height][local_width];
+        for(int y=y_min; y<=y_max; y++){
+            for(int x=x_min; x<=x_max; x++){
+                if(prevMask.getBit(x, y)){
+                    grid[y-y_min][x-x_min] = -1;
+                } else {
+                    grid[y-y_min][x-x_min] = -2;
+                }
+            }
+        }
+        debug_Grid_Output(grid, "Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ".csv");
     }
 }

@@ -28,11 +28,8 @@ class Main{
         System.gc();
         Collections.sort(layers);
         BitGrid stackedBits = new BitGrid(width, height);
-        int count = 0;
         for(ColorLayer layer : layers.reversed()){
             layer.trace(stackedBits, original);
-            stackedBits.debugFile(new File("Mask-" + count + ".png"));
-            count++;
         }
     }
 }
