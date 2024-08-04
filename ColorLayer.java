@@ -111,6 +111,15 @@ public class ColorLayer implements Comparable<ColorLayer>{
                 }
             }
         }
+        int islandCount = 0;
+        for(int y=0; y<local_height; y++){
+            for(int x=0; x<local_width; x++){
+                if(grid[y][x] == -1){
+                    FloodFills.fourDirectionFill(grid, new IntPoint(x, y), -1, islandCount);
+                    islandCount++;
+                }
+            }
+        }
         debug_Grid_Output(grid, "Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ".csv");
     }
 }
