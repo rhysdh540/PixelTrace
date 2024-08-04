@@ -1,8 +1,5 @@
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 
 public class ColorLayer implements Comparable<ColorLayer>{
     private final int color;
@@ -120,6 +117,19 @@ public class ColorLayer implements Comparable<ColorLayer>{
                 }
             }
         }
+        //Scan edges to change outer ocean from -2 to -1
+        for(int x=0; x<local_width; x++){
+            if(grid[0][x] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(x, 0), -2, -1);
+        }
+        for(int y=1; y<local_height; y++){
+            if(grid[y][0] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(0, y), -2, -1);
+            if(grid[y][local_width-1] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(local_width-1, y), -2, -1);
+        }
+        for(int x=1; x<local_width-1; x++){
+            if(grid[local_height-1][x] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(x, local_height-1), -2, -1);
+        }
+        //At this point, the only cells with -2 in them must be inner trapped pools inside islands.
+        //(Specifically pools that cannot be accessed from the outer edge by eight-directional travel.)
         debug_Grid_Output(grid, "Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ".csv");
     }
 }
