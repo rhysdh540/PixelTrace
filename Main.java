@@ -27,8 +27,12 @@ class Main{
         } // Getting the "colors" object out of scope
         System.gc();
         Collections.sort(layers);
-        for(ColorLayer layer : layers){
-            System.out.println(layer.debugInfo());
+        BitGrid stackedBits = new BitGrid(width, height);
+        int count = 0;
+        for(ColorLayer layer : layers.reversed()){
+            layer.trace(stackedBits, original);
+            stackedBits.debugFile(new File("Mask-" + count + ".png"));
+            count++;
         }
     }
 }

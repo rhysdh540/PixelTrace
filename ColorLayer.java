@@ -1,4 +1,6 @@
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class ColorLayer implements Comparable<ColorLayer>{
     private final int color;
@@ -71,5 +73,15 @@ public class ColorLayer implements Comparable<ColorLayer>{
             return count_compare;
         }
         return area_compare;
+    }
+
+    public void trace(BitGrid prevMask, BufferedImage original){
+        for(int y=0; y<original.getHeight(); y++){
+            for(int x=0; x<original.getWidth(); x++){
+                if(original.getRGB(x, y) == color){
+                    prevMask.setBit(x, y, true);
+                }
+            }
+        }
     }
 }
