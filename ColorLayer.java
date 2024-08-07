@@ -1,5 +1,6 @@
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.TreeSet;
 
 public class ColorLayer implements Comparable<ColorLayer>{
     private final int color;
@@ -74,20 +75,6 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return area_compare;
     }
 
-    private void debug_Grid_Output(int[][] grid, String filename){
-        try{
-            PrintStream ps = new PrintStream(new FileOutputStream(filename, false), true);
-            for(int[] row : grid){
-                ps.print(row[0]);
-                for(int i=1; i<row.length; i++){
-                    ps.print(", " + row[i]);
-                }
-                ps.println();
-            }
-            ps.close();
-        } catch (Exception ex){}
-    }
-
     public void trace(BitGrid prevMask, BufferedImage original){
         for(int y=0; y<original.getHeight(); y++){
             for(int x=0; x<original.getWidth(); x++){
@@ -130,6 +117,55 @@ public class ColorLayer implements Comparable<ColorLayer>{
         }
         //At this point, the only cells with -2 in them must be inner trapped pools inside islands.
         //(Specifically pools that cannot be accessed from the outer edge by eight-directional travel.)
-        debug_Grid_Output(grid, "Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ".csv");
+        //Now, time to validate which islands are top-level!
+        //Those would be islands that either touch the outer border of this ColorLayer,
+        //or else come into contact with some "-1" somewhere on its edge.
+        //Islands that don't match either of those criteria must be entirely surrounded by "-2",
+        //and are thus supposed to be saved for a later recursive check.
+        TreeSet<Integer> validIslands = new TreeSet<>();
+        for(int x=0; x<local_width; x++){
+            int check = grid[0][x];
+            if(check >= 0) validIslands.add(check);
+        }
+        for(int y=1; y<local_height; y++){
+            int check = grid[y][0];
+            if(check >= 0) validIslands.add(check);
+            check = grid[y][local_width-1];
+            if(check >= 0) validIslands.add(check);
+        }
+        for(int x=1; x<local_width-1; x++){
+            int check = grid[local_height-1][x];
+            if(check >= 0) validIslands.add(check);
+        }
+        for(int y=1; y<local_height-1; y++){
+            for(int x=1; x<local_width-1; x++){
+                int check = grid[y][x];
+                if(check >= 0){
+                    int up = grid[y-1][x];
+                    int down = grid[y+1][x];
+                    int left = grid[y][x-1];
+                    int right = grid[y][x+1];
+                    if((up == -1) || (down == -1) || (left == -1) || (right == -1)) validIslands.add(check);
+                }
+            }
+        }
+        //TODO: Forgot to include COLOR CHECK!
+        try{
+            PrintStream ps = new PrintStream(new FileOutputStream("Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ".csv", false), true);
+            for(int[] row : grid){
+                ps.print(row[0]);
+                for(int i=1; i<row.length; i++){
+                    ps.print(", " + row[i]);
+                }
+                ps.println();
+            }
+            int[] valids = validIslands.stream().mapToInt(i->i).toArray();
+            ps.print("V:, " + valids[0]);
+            for(int i=1; i<valids.length; i++){
+                ps.print(", " + valids[i]);
+            }
+            ps.println();
+            ps.close();
+        } catch (Exception ex){}
     }
 }

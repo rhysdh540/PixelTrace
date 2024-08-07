@@ -15,7 +15,7 @@ class Main{
         final int height = original.getHeight();
         ArrayList<ColorLayer> layers = new ArrayList<>();
         {
-            LinkedHashSet<Integer> colors = new LinkedHashSet<>();
+            HashSet<Integer> colors = new HashSet<>();
             for(int y=0; y<height; y++){
                 for(int x=0; x<width; x++){
                     colors.add(original.getRGB(x, y));
@@ -33,6 +33,7 @@ class Main{
         }
         for(ColorLayer layer : layers.reversed()){
             layer.trace(stackedBits, original);
+            System.gc();
         }
     }
 }

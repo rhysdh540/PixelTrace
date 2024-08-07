@@ -3,8 +3,8 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
 public class BitGrid {
-    private final int width;
-    private final int height;
+    public final int width;
+    public final int height;
     private long[] binData;
 
     public BitGrid(int new_width, int new_height){
