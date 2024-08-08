@@ -33,7 +33,6 @@ class Main{
         }
         for(ColorLayer layer : layers.reversed()){
             layer.trace(stackedBits, original);
-            System.gc();
         }
     }
 }
