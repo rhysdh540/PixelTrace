@@ -1,5 +1,5 @@
 import java.util.*;
-import java.io.File;
+import java.io.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 
@@ -9,8 +9,15 @@ class Main{
         while(sb.length() < minLength) sb.insert(0, pad);
         return sb.toString();
     }
-    public static void main(String[] args) throws Exception{
-        BufferedImage original = ImageIO.read(new File("TestBitmaps/Lakitu.png"));
+    public static void main(String[] args){
+        BufferedImage original = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        try{
+            original = ImageIO.read(new File("TestBitmaps/Lakitu.png"));
+        } catch (IOException ex){
+            System.err.println("Failed to open testing bitmap.");
+            System.err.println("Exiting early.");
+            System.exit(1);
+        }
         final int width = original.getWidth();
         final int height = original.getHeight();
         ArrayList<ColorLayer> layers = new ArrayList<>();

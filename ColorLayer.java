@@ -1,6 +1,5 @@
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.TreeSet;
 
 public class ColorLayer implements Comparable<ColorLayer>{
@@ -165,6 +164,35 @@ public class ColorLayer implements Comparable<ColorLayer>{
             validIslands = matchedIslands.stream().mapToInt(i->i).toArray();
         }//Getting the "accessibleIslands" and "matchedIslands" objects out of scope.
         System.gc();
+        for(int index : validIslands){
+            int local_x_min = local_width;
+            int local_x_max = -1;
+            int local_y_min = local_height;
+            int local_y_max = -1;
+            for(int y=0; y<local_height; y++){
+                for(int x=0; x<local_width; x++){
+                    if(grid[y][x] == index){
+                        local_x_min = Math.min(local_x_min, x);
+                        local_x_max = Math.max(local_x_max, x);
+                        local_y_min = Math.min(local_y_min, y);
+                        local_y_max = Math.max(local_y_max, y);
+                    }
+                }
+            }
+            int island_width = (local_x_max - local_x_min) + 1;
+            int island_height = (local_y_max - local_y_min) + 1;
+            BitGrid islandBits = new BitGrid(island_width, island_height);
+            for(int y=local_y_min; y<=local_y_max; y++){
+                for(int x=local_x_min; x<=local_x_max; x++){
+                    if(grid[y][x] == index){
+                        islandBits.setBit(x-local_x_min, y-local_y_min, true);
+                    }
+                }
+            }
+            try{
+                islandBits.debugFile(new File("Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + "-" + index + ".png"));
+            } catch (Exception ex){}
+        }
         try{
             PrintStream ps = new PrintStream(new FileOutputStream("Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ".csv", false), true);
             for(int[] row : grid){
