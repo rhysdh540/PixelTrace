@@ -35,11 +35,11 @@ class Main{
         System.gc();
         Collections.sort(layers);
         BitGrid stackedBits = new BitGrid(width, height);
+        for(ColorLayer layer : layers.reversed()){
+            layer.generateChildren(stackedBits, original);
+        }
         for(ColorLayer layer : layers){
             System.out.println(layer.debugInfo());
-        }
-        for(ColorLayer layer : layers.reversed()){
-            layer.trace(stackedBits, original);
         }
     }
 }

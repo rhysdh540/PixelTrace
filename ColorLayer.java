@@ -1,5 +1,4 @@
 import java.awt.image.BufferedImage;
-import java.io.*;
 import java.util.TreeSet;
 
 public class ColorLayer implements Comparable<ColorLayer>{
@@ -10,6 +9,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
     private final int y_max;
     private final long bounding_area;
     private final long pixel_count;
+    private Island[] children;
 
     public ColorLayer(int new_color, BufferedImage bitmap){
         color = new_color;
@@ -37,6 +37,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         long width = (x_max - x_min) + 1;
         long height = (y_max - y_min) + 1;
         bounding_area = width * height;
+        children = new Island[0];
     }
 
     public String debugInfo(){
@@ -59,6 +60,13 @@ public class ColorLayer implements Comparable<ColorLayer>{
         sb.append(" / ");
         sb.append("Count: ");
         sb.append(pixel_count);
+        sb.append(System.lineSeparator());
+        sb.append(children.length);
+        if(children.length == 1){
+            sb.append(" stored child.");
+        } else {
+            sb.append(" stored children.");
+        }
         return sb.toString();
     }
 
@@ -75,7 +83,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return area_compare;
     }
 
-    public void trace(BitGrid prevMask, BufferedImage original){
+    public void generateChildren(BitGrid prevMask, BufferedImage original){
         for(int y=0; y<original.getHeight(); y++){
             for(int x=0; x<original.getWidth(); x++){
                 if(original.getRGB(x, y) == color){
@@ -164,7 +172,9 @@ public class ColorLayer implements Comparable<ColorLayer>{
             validIslands = matchedIslands.stream().mapToInt(i->i).toArray();
         }//Getting the "accessibleIslands" and "matchedIslands" objects out of scope.
         System.gc();
-        for(int index : validIslands){
+        children = new Island[validIslands.length];
+        for(int i=0; i<validIslands.length; i++){
+            int index = validIslands[i];
             int local_x_min = local_width;
             int local_x_max = -1;
             int local_y_min = local_height;
@@ -189,25 +199,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
                     }
                 }
             }
-            try{
-                islandBits.debugFile(new File("Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + "-" + index + ".png"));
-            } catch (Exception ex){}
+            children[i] = new Island(local_x_min + x_min, local_y_min + y_min, islandBits);
         }
-        try{
-            PrintStream ps = new PrintStream(new FileOutputStream("Debug-" + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ".csv", false), true);
-            for(int[] row : grid){
-                ps.print(row[0]);
-                for(int i=1; i<row.length; i++){
-                    ps.print(", " + row[i]);
-                }
-                ps.println();
-            }
-            ps.print("V:, " + validIslands[0]);
-            for(int i=1; i<validIslands.length; i++){
-                ps.print(", " + validIslands[i]);
-            }
-            ps.println();
-            ps.close();
-        } catch (Exception ex){}
     }
 }
