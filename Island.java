@@ -1,7 +1,7 @@
 import java.util.*;
 
 public class Island {
-    static private List<TreeMap<Integer, Integer>> cornerTable = List.of(
+    static private final List<TreeMap<Integer, Integer>> cornerTable = List.of(
         //Index 0 = Right
         new TreeMap<Integer, Integer>(Map.of(2,1,8,3,13,1,9,3,6,1,7,3)),
         //Index 1 = Down
