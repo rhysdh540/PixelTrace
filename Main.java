@@ -41,5 +41,9 @@ class Main{
         for(ColorLayer layer : layers){
             System.out.println(layer.debugInfo());
         }
+        System.out.println();
+        for(ColorLayer layer : layers){
+            layer.printSVG();
+        }
     }
 }

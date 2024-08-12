@@ -202,4 +202,12 @@ public class ColorLayer implements Comparable<ColorLayer>{
             children[i] = new Island(local_x_min + x_min, local_y_min + y_min, islandBits);
         }
     }
+
+    public void printSVG(){
+        //TODO: Make this actually do its job right following testing
+        System.out.println("Children of " + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ":");
+        for(Island child : children){
+            System.out.println("[" + child.pathTrace() + "]");
+        }
+    }
 }

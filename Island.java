@@ -39,18 +39,60 @@ public class Island {
     }
 
     private IntPoint findUpperLeftCorner(){
-        boolean done = false;
-        IntPoint result = new IntPoint(0, 0);
         for(int y=0; y<pixels.height; y++){
             for(int x=0; x<pixels.width; x++){
                 if(fourSquareVal(x, y) == 1){
-                    result = new IntPoint(x, y);
-                    done = true;
-                    break;
+                    return new IntPoint(x, y);
                 }
             }
-            if(done) break;
         }
-        return result;
+        return new IntPoint(0, 0); //Just in case...
+    }
+
+    public String pathTrace(){
+        IntPoint start = findUpperLeftCorner();
+        int prev_x = start.x;
+        int prev_y = start.y;
+        int cur_x = start.x+1;
+        int cur_y = start.y;
+        int direction = 0;
+        StringBuilder buf = new StringBuilder("M " + (global_x_min + start.x) + " " + (global_y_min + start.y));
+        while(true){
+            if((cur_x == start.x) && (cur_y == start.y)){
+                buf.append(" z");
+                break;
+            }
+            int check = fourSquareVal(cur_x, cur_y);
+            int turn = cornerTable.get(direction).getOrDefault(check, -1);
+            if(turn >= 0){
+                if((direction == 0) || (direction == 2)){
+                    //Horizontal Line
+                    buf.append(" h ");
+                    buf.append(cur_x - prev_x);
+                    prev_x = cur_x;
+                } else {
+                    //Vertical Line
+                    buf.append(" v ");
+                    buf.append(cur_y - prev_y);
+                    prev_y = cur_y;
+                }
+                direction = turn;
+            }
+            switch(direction){
+                case 0:
+                    cur_x++;
+                    break;
+                case 1:
+                    cur_y++;
+                    break;
+                case 2:
+                    cur_x--;
+                    break;
+                default: //case 3
+                    cur_y--;
+                    break;
+            }
+        }
+        return buf.toString();
     }
 }
