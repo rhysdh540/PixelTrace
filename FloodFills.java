@@ -7,9 +7,9 @@ public class FloodFills {
         while(!points.isEmpty()){
             IntPoint cur = points.pollFirst();
             if(cur.x < 0) continue;
-            if(cur.x > (grid[0].length - 1)) continue;
+            if(cur.x >= grid[0].length) continue;
             if(cur.y < 0) continue;
-            if(cur.y > (grid.length - 1)) continue;
+            if(cur.y >= grid.length) continue;
             if(grid[cur.y][cur.x] != target) continue;
             grid[cur.y][cur.x] = newVal;
             points.addLast(new IntPoint(cur.x-1, cur.y));
@@ -25,9 +25,9 @@ public class FloodFills {
         while(!points.isEmpty()){
             IntPoint cur = points.pollFirst();
             if(cur.x < 0) continue;
-            if(cur.x > (grid[0].length - 1)) continue;
+            if(cur.x >= grid[0].length) continue;
             if(cur.y < 0) continue;
-            if(cur.y > (grid.length - 1)) continue;
+            if(cur.y >= grid.length) continue;
             if(grid[cur.y][cur.x] != target) continue;
             grid[cur.y][cur.x] = newVal;
             points.addLast(new IntPoint(cur.x-1, cur.y-1));

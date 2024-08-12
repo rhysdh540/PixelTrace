@@ -21,4 +21,36 @@ public class Island {
         global_y_min = y_min;
         pixels = pixels_input;
     }
+
+    private boolean safeLookup(int x, int y){
+        if(x < 0) return false;
+        if(x >= pixels.width) return false;
+        if(y < 0) return false;
+        if(y >= pixels.height) return false;
+        return pixels.getBit(x, y);
+    }
+
+    private int fourSquareVal(int x, int y){
+        int eight = safeLookup(x-1, y-1) ? 8 : 0;
+        int four = safeLookup(x, y-1) ? 4 : 0;
+        int two = safeLookup(x-1, y) ? 2 : 0;
+        int one = safeLookup(x, y) ? 1 : 0;
+        return eight | four | two | one;
+    }
+
+    private IntPoint findUpperLeftCorner(){
+        boolean done = false;
+        IntPoint result = new IntPoint(0, 0);
+        for(int y=0; y<pixels.height; y++){
+            for(int x=0; x<pixels.width; x++){
+                if(fourSquareVal(x, y) == 1){
+                    result = new IntPoint(x, y);
+                    done = true;
+                    break;
+                }
+            }
+            if(done) break;
+        }
+        return result;
+    }
 }
