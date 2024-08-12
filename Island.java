@@ -1,15 +1,20 @@
 import java.util.*;
 
 public class Island {
+    static private final int RIGHT = 0;
+    static private final int DOWN = 1;
+    static private final int LEFT = 2;
+    static private final int UP = 3;
+
     static private final List<Map<Integer, Integer>> cornerTable = List.of(
         //Index 0 = Right
-        Map.of(2,1,8,3,13,1,9,3,6,1,7,3),
+        Map.of(2,DOWN,8,UP,13,DOWN,9,UP,6,DOWN,7,UP),
         //Index 1 = Down
-        Map.of(8,2,4,0,9,2,6,0,7,2,11,0),
+        Map.of(8,LEFT,4,RIGHT,9,LEFT,6,RIGHT,7,LEFT,11,RIGHT),
         //Index 2 = Left
-        Map.of(1,1,4,3,14,1,9,1,6,3,11,3),
+        Map.of(1,DOWN,4,UP,14,DOWN,9,DOWN,6,UP,11,UP),
         //Index 3 = Up
-        Map.of(1,0,2,2,14,0,13,2,9,0,6,2)
+        Map.of(1,RIGHT,2,LEFT,14,RIGHT,13,LEFT,9,RIGHT,6,LEFT)
     );
 
     private int global_x_min;
@@ -55,22 +60,16 @@ public class Island {
         int prev_y = start.y;
         int cur_x = start.x+1;
         int cur_y = start.y;
-        int direction = 0;
+        int direction = RIGHT;
         StringBuilder buf = new StringBuilder("M " + (global_x_min + start.x) + " " + (global_y_min + start.y));
-        while(true){
-            if((cur_x == start.x) && (cur_y == start.y)){
-                buf.append(" z");
-                break;
-            }
+        while((cur_x != start.x) || (cur_y != start.y)){
             int turn = cornerTable.get(direction).getOrDefault(fourSquareVal(cur_x, cur_y), -1);
             if(turn >= 0){
-                if((direction == 0) || (direction == 2)){
-                    //Horizontal Line
+                if((direction == RIGHT) || (direction == LEFT)){ //Horizontal Line
                     buf.append(" h ");
                     buf.append(cur_x - prev_x);
                     prev_x = cur_x;
-                } else {
-                    //Vertical Line
+                } else { //Vertical Line
                     buf.append(" v ");
                     buf.append(cur_y - prev_y);
                     prev_y = cur_y;
@@ -78,20 +77,21 @@ public class Island {
                 direction = turn;
             }
             switch(direction){
-                case 0:
+                case RIGHT:
                     cur_x++;
                     break;
-                case 1:
+                case DOWN:
                     cur_y++;
                     break;
-                case 2:
+                case LEFT:
                     cur_x--;
                     break;
-                default: //case 3
+                default: //case UP
                     cur_y--;
                     break;
             }
         }
+        buf.append(" z");
         return buf.toString();
     }
 }
