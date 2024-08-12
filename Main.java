@@ -43,7 +43,7 @@ class Main{
         //For now I just wanted to hack someting together to start inspecing some visual output.
         try{
             ArrayList<String> svgLines = new ArrayList<>();
-            svgLines.add("<svg viewBox=\"0 0 " + width + " " + height + "\" xmlns=\"http://www.w3.org/2000/svg\">");
+            svgLines.add("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\">");
             svgLines.add("+");
             for(ColorLayer layer : layers){
                 layer.printSVG(svgLines);

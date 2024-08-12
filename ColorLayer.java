@@ -205,13 +205,17 @@ public class ColorLayer implements Comparable<ColorLayer>{
     }
 
     public void printSVG(ArrayList<String> lines){
-        String colorStr = Main.leftPad(Integer.toHexString(color & 0xFFFFFF).toUpperCase(), '0', 6);
-        lines.add("<g fill=\"#" + colorStr + "\">");
-        lines.add("+");
-        for(Island child : children){
-            lines.add("<path d=\"" + child.pathTrace() + "\" />");
+        String colorStr = "#" + Main.leftPad(Integer.toHexString(color & 0xFFFFFF).toUpperCase(), '0', 6);
+        if(children.length == 1){
+            lines.add("<path fill=\"" + colorStr + "\" d=\"" + children[0].pathTrace() + "\" />");
+        } else {
+            lines.add("<g fill=\"" + colorStr + "\">");
+            lines.add("+");
+            for(Island child : children){
+                lines.add("<path d=\"" + child.pathTrace() + "\" />");
+            }
+            lines.add("-");
+            lines.add("</g>");
         }
-        lines.add("-");
-        lines.add("</g>");
     }
 }
