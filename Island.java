@@ -62,8 +62,7 @@ public class Island {
                 buf.append(" z");
                 break;
             }
-            int check = fourSquareVal(cur_x, cur_y);
-            int turn = cornerTable.get(direction).getOrDefault(check, -1);
+            int turn = cornerTable.get(direction).getOrDefault(fourSquareVal(cur_x, cur_y), -1);
             if(turn >= 0){
                 if((direction == 0) || (direction == 2)){
                     //Horizontal Line
