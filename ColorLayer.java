@@ -1,5 +1,6 @@
 import java.awt.image.BufferedImage;
 import java.util.TreeSet;
+import java.util.ArrayList;
 
 public class ColorLayer implements Comparable<ColorLayer>{
     private final int color;
@@ -203,11 +204,14 @@ public class ColorLayer implements Comparable<ColorLayer>{
         }
     }
 
-    public void printSVG(){
-        //TODO: Make this actually do its job right following testing
-        System.out.println("Children of " + Main.leftPad(Integer.toHexString(color).toUpperCase(), '0', 8) + ":");
+    public void printSVG(ArrayList<String> lines){
+        String colorStr = Main.leftPad(Integer.toHexString(color & 0xFFFFFF).toUpperCase(), '0', 6);
+        lines.add("<g fill=\"#" + colorStr + "\">");
+        lines.add("+");
         for(Island child : children){
-            System.out.println("[" + child.pathTrace() + "]");
+            lines.add("<path d=\"" + child.pathTrace() + "\" />");
         }
+        lines.add("-");
+        lines.add("</g>");
     }
 }

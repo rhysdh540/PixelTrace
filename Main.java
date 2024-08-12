@@ -38,12 +38,40 @@ class Main{
         for(ColorLayer layer : layers.reversed()){
             layer.generateChildren(stackedBits, original);
         }
-        for(ColorLayer layer : layers){
-            System.out.println(layer.debugInfo());
-        }
-        System.out.println();
-        for(ColorLayer layer : layers){
-            layer.printSVG();
+        //The structure of the following code is totally subject to change.
+        //I'm likely to implement a new class to automate more of the XML output process.
+        //For now I just wanted to hack someting together to start inspecing some visual output.
+        try{
+            ArrayList<String> svgLines = new ArrayList<>();
+            svgLines.add("<svg viewBox=\"0 0 " + width + " " + height + "\" xmlns=\"http://www.w3.org/2000/svg\">");
+            svgLines.add("+");
+            for(ColorLayer layer : layers){
+                layer.printSVG(svgLines);
+            }
+            svgLines.add("-");
+            svgLines.add("</svg>");
+            int indent = 0;
+            PrintStream ps = new PrintStream(new FileOutputStream("Testing.svg", false), true);
+            for(String line : svgLines){
+                switch(line){
+                    case "+":
+                        indent++;
+                        break;
+                    case "-":
+                        indent--;
+                        break;
+                    default:
+                        ps.print("    ".repeat(indent));
+                        ps.print(line);
+                        ps.print("\n");
+                        break;
+                }
+            }
+            ps.close();
+        } catch (IOException ex){
+            System.err.println("Failed to write final file.");
+            System.err.println("Exiting early.");
+            System.exit(1);
         }
     }
 }
