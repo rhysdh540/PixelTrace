@@ -1,4 +1,5 @@
 import java.awt.image.BufferedImage;
+import java.util.HashSet;
 import java.util.TreeSet;
 import java.util.ArrayList;
 
@@ -85,8 +86,8 @@ public class ColorLayer implements Comparable<ColorLayer>{
     }
 
     public void generateChildren(BitGrid prevMask, BufferedImage original){
-        for(int y=0; y<original.getHeight(); y++){
-            for(int x=0; x<original.getWidth(); x++){
+        for(int y=y_min; y<=y_max; y++){
+            for(int x=x_min; x<=x_max; x++){
                 if(original.getRGB(x, y) == color){
                     prevMask.setBit(x, y, true);
                 }

@@ -10,6 +10,7 @@ class Main{
         return sb.toString();
     }
     public static void main(String[] args){
+        final long startTime = System.currentTimeMillis();
         BufferedImage original = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         try{
             original = ImageIO.read(new File("TestBitmaps/Lakitu.png"));
@@ -28,16 +29,26 @@ class Main{
                     colors.add(original.getRGB(x, y));
                 }
             }
+            System.out.println(colors.size() + " distinct colors.");
+            int counter = 0;
             for(int c : colors){
+                System.out.print(counter + " ColorLayers created.\r");
+                System.out.flush();
                 layers.add(new ColorLayer(c, original));
+                counter++;
             }
+            System.out.println(counter + " ColorLayers created.");
         } // Getting the "colors" object out of scope
         System.gc();
         Collections.sort(layers);
+        layers.trimToSize();
         BitGrid stackedBits = new BitGrid(width, height);
-        for(ColorLayer layer : layers.reversed()){
-            layer.generateChildren(stackedBits, original);
+        for(int i=0; i<layers.size(); i++){
+            System.out.print(i + " ColorLayers chunked.\r");
+            System.out.flush();
+            layers.get(layers.size()-1-i).generateChildren(stackedBits, original);
         }
+        System.out.println(layers.size() + " ColorLayers chunked.");
         //The structure of the following code is totally subject to change.
         //I'm likely to implement a new class to automate more of the XML output process.
         //For now I just wanted to hack someting together to start inspecing some visual output.
@@ -73,5 +84,9 @@ class Main{
             System.err.println("Exiting early.");
             System.exit(1);
         }
+        final long endTime = System.currentTimeMillis();
+        String seconds = leftPad(Long.toString(endTime-startTime), '0', 4);
+        seconds = seconds.substring(0,seconds.length()-3) + "." + seconds.substring(seconds.length()-3);
+        System.out.println("Finished in " + seconds + " seconds.");
     }
 }
