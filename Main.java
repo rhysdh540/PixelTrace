@@ -9,7 +9,8 @@ class Main{
         while(sb.length() < minLength) sb.insert(0, pad);
         return sb.toString();
     }
-    private static ColorLayer[] createLayers(BufferedImage bitmap){
+
+    private static int[] countColors(BufferedImage bitmap){
         HashSet<Integer> colors = new HashSet<>();
         final int width = bitmap.getWidth();
         final int height = bitmap.getHeight();
@@ -19,18 +20,32 @@ class Main{
             }
         }
         System.out.println(colors.size() + " distinct colors.");
-        ArrayList<ColorLayer> layers = new ArrayList<>();
-        int counter = 0;
+        return colors.stream().mapToInt(i->i).toArray();
+    }
+
+    private static ColorLayer[] createLayers(BufferedImage bitmap){
+        final int width = bitmap.getWidth();
+        final int height = bitmap.getHeight();
+        int[] colors = countColors(bitmap);
+        HashMap<Integer, BitGrid> detections = new HashMap<>();
         for(int c : colors){
-            if(counter % 100 == 0){
-                System.out.print(counter + " ColorLayers created.\r");
+            detections.put(c, new BitGrid(width, height));
+        }
+        for(int y=0; y<height; y++){
+            for(int x=0; x<width; x++){
+                detections.get(bitmap.getRGB(x, y)).setBit(x, y, true);
+            }
+        }
+        ColorLayer[] layers = new ColorLayer[colors.length];
+        for(int i=0; i<colors.length; i++){
+            if(i % 100 == 0){
+                System.out.print(i + " ColorLayers created.\r");
                 System.out.flush();
             }
-            layers.add(new ColorLayer(c, bitmap));
-            counter++;
+            layers[i] = new ColorLayer(colors[i], detections.get(colors[i]));
         }
-        System.out.println(counter + " ColorLayers created.");
-        return layers.toArray(new ColorLayer[0]);
+        System.out.println(layers.length + " ColorLayers created.");
+        return layers;
     }
     public static void main(String[] args) throws Exception{
         final long startTime = System.currentTimeMillis();
@@ -50,7 +65,7 @@ class Main{
                 }
             }
             //Index math necessary: ColorLayers sorted back-to-front, but must be traced front-to-back.
-            layers[layers.length-1-i].generateChildren(stackedBits, original);
+            layers[layers.length-1-i].generateChildren(stackedBits);
         }
         System.gc();
         System.out.println(layers.length + " ColorLayers chunked.");

@@ -1,4 +1,3 @@
-import java.awt.image.BufferedImage;
 import java.util.TreeSet;
 import java.util.ArrayList;
 
@@ -10,18 +9,20 @@ public class ColorLayer implements Comparable<ColorLayer>{
     private final int y_max;
     private final long bounding_area;
     private final long pixel_count;
+    private final BitGrid mask;
     private Island[] children;
 
-    public ColorLayer(int new_color, BufferedImage bitmap){
+    public ColorLayer(int new_color, BitGrid detections){
         color = new_color;
+        mask = detections;
         int temp_x_min = Integer.MAX_VALUE;
         int temp_x_max = Integer.MIN_VALUE;
         int temp_y_min = Integer.MAX_VALUE;
         int temp_y_max = Integer.MIN_VALUE;
         long temp_count = 0;
-        for(int y=0; y<bitmap.getHeight(); y++){
-            for(int x=0; x<bitmap.getWidth(); x++){
-                if(bitmap.getRGB(x, y) == color){
+        for(int y=0; y<mask.height; y++){
+            for(int x=0; x<mask.width; x++){
+                if(mask.getBit(x, y)){
                     temp_x_min = Math.min(temp_x_min, x);
                     temp_x_max = Math.max(temp_x_max, x);
                     temp_y_min = Math.min(temp_y_min, y);
@@ -84,7 +85,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return area_compare;
     }
 
-    private int[] determineValidIslands(int[][] grid, BufferedImage original){
+    private int[] determineValidIslands(int[][] grid){
         final int local_width = grid[0].length;
         final int local_height = grid.length;
         //"Accessible" islands either touch the outer border of this ColorLayer,
@@ -123,7 +124,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         for(int y=0; y<local_height; y++){
             for(int x=0; x<local_width; x++){
                 int check = grid[y][x];
-                if(accessibleIslands.contains(check) && (original.getRGB(x+x_min, y+y_min) == color)){
+                if(accessibleIslands.contains(check) && mask.getBit(x+x_min, y+y_min)){
                     matchedIslands.add(check);
                 }
             }
@@ -131,10 +132,10 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return matchedIslands.stream().mapToInt(i->i).toArray();
     }
 
-    public void generateChildren(BitGrid prevMask, BufferedImage original){
+    public void generateChildren(BitGrid prevMask){
         for(int y=y_min; y<=y_max; y++){
             for(int x=x_min; x<=x_max; x++){
-                if(original.getRGB(x, y) == color){
+                if(mask.getBit(x, y)){
                     prevMask.setBit(x, y, true);
                 }
             }
@@ -174,7 +175,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         //At this point, the only cells with -2 in them must be inner trapped pools inside islands.
         //(Specifically pools that cannot be accessed from the outer edge by eight-directional travel.)
         //Now it's time to validate which islands are top-level.
-        int[] validIslands = determineValidIslands(grid, original);
+        int[] validIslands = determineValidIslands(grid);
         children = new Island[validIslands.length];
         for(int i=0; i<validIslands.length; i++){
             int index = validIslands[i];
