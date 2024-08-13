@@ -123,7 +123,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
                 }
             }
         }
-        return matchedIslands.stream().mapToInt(i->i).toArray();
+        return matchedIslands.stream().mapToInt(i->i).sorted().toArray();
     }
 
     public void generateChildren(BitGrid prevMask){
