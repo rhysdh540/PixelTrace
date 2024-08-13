@@ -1,14 +1,15 @@
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class PrintSVG {
-    private PrintStream ps = null;
+    private PrintStream ps;
     private int indentAmount = 0;
     private String indent = "";
     private boolean startOfLine = true;
 
-    public PrintSVG(File output) throws FileNotFoundException{
-        ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output, false)), true, StandardCharsets.UTF_8);
+    public PrintSVG(File output) throws IOException {
+        ps = new PrintStream(new BufferedOutputStream(Files.newOutputStream(output.toPath())), true, StandardCharsets.UTF_8);
     }
 
     private void updateIndent(){
