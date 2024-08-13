@@ -86,7 +86,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         //or else come into contact with some "-1" somewhere on the island's edge.
         //Islands that don't match either of those criteria must be entirely surrounded by "-2",
         //and are thus supposed to be saved for a later recursive pass.
-        TreeSet<Integer> accessibleIslands = new TreeSet<>();
+        HashSet<Integer> accessibleIslands = new HashSet<>();
         for(int x=0; x<mask.width; x++){
             int check = grid[0][x];
             if(check >= 0) accessibleIslands.add(check);
@@ -114,7 +114,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
             }
         }
         //"Matched" islands are Accessible islands that actually do contain some of this ColorLayer's assigned color.
-        TreeSet<Integer> matchedIslands = new TreeSet<>();
+        HashSet<Integer> matchedIslands = new HashSet<>();
         for(int y=0; y<mask.height; y++){
             for(int x=0; x<mask.width; x++){
                 int check = grid[y][x];
