@@ -1,5 +1,4 @@
 import java.awt.image.BufferedImage;
-import java.util.HashSet;
 import java.util.TreeSet;
 import java.util.ArrayList;
 
@@ -173,7 +172,6 @@ public class ColorLayer implements Comparable<ColorLayer>{
             }
             validIslands = matchedIslands.stream().mapToInt(i->i).toArray();
         }//Getting the "accessibleIslands" and "matchedIslands" objects out of scope.
-        System.gc();
         children = new Island[validIslands.length];
         for(int i=0; i<validIslands.length; i++){
             int index = validIslands[i];
