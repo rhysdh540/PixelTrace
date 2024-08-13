@@ -84,6 +84,53 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return area_compare;
     }
 
+    private int[] determineValidIslands(int[][] grid, BufferedImage original){
+        final int local_width = grid[0].length;
+        final int local_height = grid.length;
+        //"Accessible" islands either touch the outer border of this ColorLayer,
+        //or else come into contact with some "-1" somewhere on the island's edge.
+        //Islands that don't match either of those criteria must be entirely surrounded by "-2",
+        //and are thus supposed to be saved for a later recursive pass.
+        TreeSet<Integer> accessibleIslands = new TreeSet<>();
+        for(int x=0; x<local_width; x++){
+            int check = grid[0][x];
+            if(check >= 0) accessibleIslands.add(check);
+        }
+        for(int y=1; y<local_height; y++){
+            int check = grid[y][0];
+            if(check >= 0) accessibleIslands.add(check);
+            check = grid[y][local_width-1];
+            if(check >= 0) accessibleIslands.add(check);
+        }
+        for(int x=1; x<local_width-1; x++){
+            int check = grid[local_height-1][x];
+            if(check >= 0) accessibleIslands.add(check);
+        }
+        for(int y=1; y<local_height-1; y++){
+            for(int x=1; x<local_width-1; x++){
+                int check = grid[y][x];
+                if(check >= 0){
+                    int up = grid[y-1][x];
+                    int down = grid[y+1][x];
+                    int left = grid[y][x-1];
+                    int right = grid[y][x+1];
+                    if((up == -1) || (down == -1) || (left == -1) || (right == -1)) accessibleIslands.add(check);
+                }
+            }
+        }
+        //"Matched" islands are Accessible islands that actually do contain some of this ColorLayer's assigned color.
+        TreeSet<Integer> matchedIslands = new TreeSet<>();
+        for(int y=0; y<local_height; y++){
+            for(int x=0; x<local_width; x++){
+                int check = grid[y][x];
+                if(accessibleIslands.contains(check) && (original.getRGB(x+x_min, y+y_min) == color)){
+                    matchedIslands.add(check);
+                }
+            }
+        }
+        return matchedIslands.stream().mapToInt(i->i).toArray();
+    }
+
     public void generateChildren(BitGrid prevMask, BufferedImage original){
         for(int y=y_min; y<=y_max; y++){
             for(int x=x_min; x<=x_max; x++){
@@ -127,51 +174,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         //At this point, the only cells with -2 in them must be inner trapped pools inside islands.
         //(Specifically pools that cannot be accessed from the outer edge by eight-directional travel.)
         //Now it's time to validate which islands are top-level.
-        int[] validIslands = new int[0];
-        {
-            //"Accessible" islands either touch the outer border of this ColorLayer,
-            //or else come into contact with some "-1" somewhere on the island's edge.
-            //Islands that don't match either of those criteria must be entirely surrounded by "-2",
-            //and are thus supposed to be saved for a later recursive pass.
-            TreeSet<Integer> accessibleIslands = new TreeSet<>();
-            for(int x=0; x<local_width; x++){
-                int check = grid[0][x];
-                if(check >= 0) accessibleIslands.add(check);
-            }
-            for(int y=1; y<local_height; y++){
-                int check = grid[y][0];
-                if(check >= 0) accessibleIslands.add(check);
-                check = grid[y][local_width-1];
-                if(check >= 0) accessibleIslands.add(check);
-            }
-            for(int x=1; x<local_width-1; x++){
-                int check = grid[local_height-1][x];
-                if(check >= 0) accessibleIslands.add(check);
-            }
-            for(int y=1; y<local_height-1; y++){
-                for(int x=1; x<local_width-1; x++){
-                    int check = grid[y][x];
-                    if(check >= 0){
-                        int up = grid[y-1][x];
-                        int down = grid[y+1][x];
-                        int left = grid[y][x-1];
-                        int right = grid[y][x+1];
-                        if((up == -1) || (down == -1) || (left == -1) || (right == -1)) accessibleIslands.add(check);
-                    }
-                }
-            }
-            //"Matched" islands are Accessible islands that actually do contain some of this ColorLayer's assigned color.
-            TreeSet<Integer> matchedIslands = new TreeSet<>();
-            for(int y=0; y<local_height; y++){
-                for(int x=0; x<local_width; x++){
-                    int check = grid[y][x];
-                    if(accessibleIslands.contains(check) && (original.getRGB(x+x_min, y+y_min) == color)){
-                        matchedIslands.add(check);
-                    }
-                }
-            }
-            validIslands = matchedIslands.stream().mapToInt(i->i).toArray();
-        }//Getting the "accessibleIslands" and "matchedIslands" objects out of scope.
+        int[] validIslands = determineValidIslands(grid, original);
         children = new Island[validIslands.length];
         for(int i=0; i<validIslands.length; i++){
             int index = validIslands[i];

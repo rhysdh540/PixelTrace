@@ -45,9 +45,14 @@ class Main{
             if(i % 100 == 0){
                 System.out.print(i + " ColorLayers chunked.\r");
                 System.out.flush();
+                if(i % 1000 == 0){
+                    System.gc();
+                }
             }
+            //Index math necessary: ColorLayers sorted back-to-front, but must be traced front-to-back.
             layers[layers.length-1-i].generateChildren(stackedBits, original);
         }
+        System.gc();
         System.out.println(layers.length + " ColorLayers chunked.");
         //The structure of the following code is totally subject to change.
         //I'm likely to implement a new class to automate more of the XML output process.
