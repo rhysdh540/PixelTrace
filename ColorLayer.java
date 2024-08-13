@@ -14,15 +14,14 @@ public class ColorLayer implements Comparable<ColorLayer>{
 
     public ColorLayer(int new_color, BitGrid detections){
         color = new_color;
-        mask = detections;
         int temp_x_min = Integer.MAX_VALUE;
         int temp_x_max = Integer.MIN_VALUE;
         int temp_y_min = Integer.MAX_VALUE;
         int temp_y_max = Integer.MIN_VALUE;
         long temp_count = 0;
-        for(int y=0; y<mask.height; y++){
-            for(int x=0; x<mask.width; x++){
-                if(mask.getBit(x, y)){
+        for(int y=0; y<detections.height; y++){
+            for(int x=0; x<detections.width; x++){
+                if(detections.getBit(x, y)){
                     temp_x_min = Math.min(temp_x_min, x);
                     temp_x_max = Math.max(temp_x_max, x);
                     temp_y_min = Math.min(temp_y_min, y);
@@ -39,6 +38,14 @@ public class ColorLayer implements Comparable<ColorLayer>{
         long width = (x_max - x_min) + 1;
         long height = (y_max - y_min) + 1;
         bounding_area = width * height;
+        mask = new BitGrid((int) width, (int) height);
+        for(int y=y_min; y<=y_max; y++){
+            for(int x=x_min; x<=x_max; x++){
+                if(detections.getBit(x, y)){
+                    mask.setBit(x-x_min, y-y_min, true);
+                }
+            }
+        }
         children = new Island[0];
     }
 
@@ -86,29 +93,27 @@ public class ColorLayer implements Comparable<ColorLayer>{
     }
 
     private int[] determineValidIslands(int[][] grid){
-        final int local_width = grid[0].length;
-        final int local_height = grid.length;
         //"Accessible" islands either touch the outer border of this ColorLayer,
         //or else come into contact with some "-1" somewhere on the island's edge.
         //Islands that don't match either of those criteria must be entirely surrounded by "-2",
         //and are thus supposed to be saved for a later recursive pass.
         TreeSet<Integer> accessibleIslands = new TreeSet<>();
-        for(int x=0; x<local_width; x++){
+        for(int x=0; x<mask.width; x++){
             int check = grid[0][x];
             if(check >= 0) accessibleIslands.add(check);
         }
-        for(int y=1; y<local_height; y++){
+        for(int y=1; y<mask.height; y++){
             int check = grid[y][0];
             if(check >= 0) accessibleIslands.add(check);
-            check = grid[y][local_width-1];
+            check = grid[y][mask.width-1];
             if(check >= 0) accessibleIslands.add(check);
         }
-        for(int x=1; x<local_width-1; x++){
-            int check = grid[local_height-1][x];
+        for(int x=1; x<mask.width-1; x++){
+            int check = grid[mask.height-1][x];
             if(check >= 0) accessibleIslands.add(check);
         }
-        for(int y=1; y<local_height-1; y++){
-            for(int x=1; x<local_width-1; x++){
+        for(int y=1; y<mask.height-1; y++){
+            for(int x=1; x<mask.width-1; x++){
                 int check = grid[y][x];
                 if(check >= 0){
                     int up = grid[y-1][x];
@@ -121,10 +126,10 @@ public class ColorLayer implements Comparable<ColorLayer>{
         }
         //"Matched" islands are Accessible islands that actually do contain some of this ColorLayer's assigned color.
         TreeSet<Integer> matchedIslands = new TreeSet<>();
-        for(int y=0; y<local_height; y++){
-            for(int x=0; x<local_width; x++){
+        for(int y=0; y<mask.height; y++){
+            for(int x=0; x<mask.width; x++){
                 int check = grid[y][x];
-                if(accessibleIslands.contains(check) && mask.getBit(x+x_min, y+y_min)){
+                if(accessibleIslands.contains(check) && mask.getBit(x, y)){
                     matchedIslands.add(check);
                 }
             }
@@ -135,14 +140,12 @@ public class ColorLayer implements Comparable<ColorLayer>{
     public void generateChildren(BitGrid prevMask){
         for(int y=y_min; y<=y_max; y++){
             for(int x=x_min; x<=x_max; x++){
-                if(mask.getBit(x, y)){
+                if(mask.getBit(x-x_min, y-y_min)){
                     prevMask.setBit(x, y, true);
                 }
             }
         }
-        int local_width = (x_max - x_min) + 1;
-        int local_height = (y_max - y_min) + 1;
-        int[][] grid = new int[local_height][local_width];
+        int[][] grid = new int[mask.height][mask.width];
         for(int y=y_min; y<=y_max; y++){
             for(int x=x_min; x<=x_max; x++){
                 if(prevMask.getBit(x, y)){
@@ -153,8 +156,8 @@ public class ColorLayer implements Comparable<ColorLayer>{
             }
         }
         int islandCount = 0;
-        for(int y=0; y<local_height; y++){
-            for(int x=0; x<local_width; x++){
+        for(int y=0; y<mask.height; y++){
+            for(int x=0; x<mask.width; x++){
                 if(grid[y][x] == -1){
                     FloodFills.fourDirectionFill(grid, new IntPoint(x, y), -1, islandCount);
                     islandCount++;
@@ -162,15 +165,15 @@ public class ColorLayer implements Comparable<ColorLayer>{
             }
         }
         //Scan edges to change outer ocean from -2 to -1
-        for(int x=0; x<local_width; x++){
+        for(int x=0; x<mask.width; x++){
             if(grid[0][x] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(x, 0), -2, -1);
         }
-        for(int y=1; y<local_height; y++){
+        for(int y=1; y<mask.height; y++){
             if(grid[y][0] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(0, y), -2, -1);
-            if(grid[y][local_width-1] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(local_width-1, y), -2, -1);
+            if(grid[y][mask.width-1] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(mask.width-1, y), -2, -1);
         }
-        for(int x=1; x<local_width-1; x++){
-            if(grid[local_height-1][x] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(x, local_height-1), -2, -1);
+        for(int x=1; x<mask.width-1; x++){
+            if(grid[mask.height-1][x] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(x, mask.height-1), -2, -1);
         }
         //At this point, the only cells with -2 in them must be inner trapped pools inside islands.
         //(Specifically pools that cannot be accessed from the outer edge by eight-directional travel.)
@@ -179,12 +182,12 @@ public class ColorLayer implements Comparable<ColorLayer>{
         children = new Island[validIslands.length];
         for(int i=0; i<validIslands.length; i++){
             int index = validIslands[i];
-            int local_x_min = local_width;
+            int local_x_min = mask.width;
             int local_x_max = -1;
-            int local_y_min = local_height;
+            int local_y_min = mask.height;
             int local_y_max = -1;
-            for(int y=0; y<local_height; y++){
-                for(int x=0; x<local_width; x++){
+            for(int y=0; y<mask.height; y++){
+                for(int x=0; x<mask.width; x++){
                     if(grid[y][x] == index){
                         local_x_min = Math.min(local_x_min, x);
                         local_x_max = Math.max(local_x_max, x);

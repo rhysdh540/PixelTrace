@@ -41,8 +41,12 @@ class Main{
             if(i % 100 == 0){
                 System.out.print(i + " ColorLayers created.\r");
                 System.out.flush();
+                if(i % 1000 == 0){
+                    System.gc();
+                }
             }
             layers[i] = new ColorLayer(colors[i], detections.get(colors[i]));
+            detections.remove(colors[i]);
         }
         System.out.println(layers.length + " ColorLayers created.");
         return layers;
@@ -54,6 +58,7 @@ class Main{
         final int width = original.getWidth();
         final int height = original.getHeight();
         ColorLayer[] layers = createLayers(original);
+        System.gc();
         Arrays.sort(layers);
         BitGrid stackedBits = new BitGrid(width, height);
         for(int i=0; i<layers.length; i++){
