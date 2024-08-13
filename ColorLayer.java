@@ -1,5 +1,4 @@
-import java.util.TreeSet;
-import java.util.ArrayList;
+import java.util.*;
 
 public class ColorLayer implements Comparable<ColorLayer>{
     private final int color;
@@ -12,39 +11,29 @@ public class ColorLayer implements Comparable<ColorLayer>{
     private final BitGrid mask;
     private Island[] children;
 
-    public ColorLayer(int new_color, BitGrid detections){
+    public ColorLayer(int new_color, List<IntPoint> detections){
         color = new_color;
         int temp_x_min = Integer.MAX_VALUE;
         int temp_x_max = Integer.MIN_VALUE;
         int temp_y_min = Integer.MAX_VALUE;
         int temp_y_max = Integer.MIN_VALUE;
-        long temp_count = 0;
-        for(int y=0; y<detections.height; y++){
-            for(int x=0; x<detections.width; x++){
-                if(detections.getBit(x, y)){
-                    temp_x_min = Math.min(temp_x_min, x);
-                    temp_x_max = Math.max(temp_x_max, x);
-                    temp_y_min = Math.min(temp_y_min, y);
-                    temp_y_max = Math.max(temp_y_max, y);
-                    temp_count++;
-                }
-            }
+        for(IntPoint p : detections){
+            temp_x_min = Math.min(temp_x_min, p.x);
+            temp_x_max = Math.max(temp_x_max, p.x);
+            temp_y_min = Math.min(temp_y_min, p.y);
+            temp_y_max = Math.max(temp_y_max, p.y);
         }
         x_min = temp_x_min;
         x_max = temp_x_max;
         y_min = temp_y_min;
         y_max = temp_y_max;
-        pixel_count = temp_count;
+        pixel_count = detections.size();
         long width = (x_max - x_min) + 1;
         long height = (y_max - y_min) + 1;
         bounding_area = width * height;
         mask = new BitGrid((int) width, (int) height);
-        for(int y=y_min; y<=y_max; y++){
-            for(int x=x_min; x<=x_max; x++){
-                if(detections.getBit(x, y)){
-                    mask.setBit(x-x_min, y-y_min, true);
-                }
-            }
+        for(IntPoint p : detections){
+            mask.setBit(p.x-x_min, p.y-y_min, true);
         }
         children = new Island[0];
     }

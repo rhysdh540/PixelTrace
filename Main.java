@@ -27,13 +27,13 @@ class Main{
         final int width = bitmap.getWidth();
         final int height = bitmap.getHeight();
         int[] colors = countColors(bitmap);
-        HashMap<Integer, BitGrid> detections = new HashMap<>();
+        HashMap<Integer, ArrayList<IntPoint>> detections = new HashMap<>();
         for(int c : colors){
-            detections.put(c, new BitGrid(width, height));
+            detections.put(c, new ArrayList<>());
         }
         for(int y=0; y<height; y++){
             for(int x=0; x<width; x++){
-                detections.get(bitmap.getRGB(x, y)).setBit(x, y, true);
+                detections.get(bitmap.getRGB(x, y)).add(new IntPoint(x, y));
             }
         }
         ColorLayer[] layers = new ColorLayer[colors.length];
@@ -41,9 +41,6 @@ class Main{
             if(i % 100 == 0){
                 System.out.print(i + " ColorLayers created.\r");
                 System.out.flush();
-                if(i % 1000 == 0){
-                    System.gc();
-                }
             }
             layers[i] = new ColorLayer(colors[i], detections.get(colors[i]));
             detections.remove(colors[i]);
