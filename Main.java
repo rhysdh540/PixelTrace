@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.Map.Entry;
 import java.io.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -16,7 +17,8 @@ class Main{
         HashMap<Integer, ArrayList<IntPoint>> detections = new HashMap<>();
         for(int y=0; y<height; y++){
             for(int x=0; x<width; x++){
-                int color = bitmap.getRGB(x, y);
+                //TODO: Remove this alpha channel coercion when alpha support is ready.
+                int color = bitmap.getRGB(x, y) | 0xFF000000;
                 if(detections.containsKey(color)){
                     detections.get(color).add(new IntPoint(x, y));
                 } else {
@@ -26,21 +28,15 @@ class Main{
                 }
             }
         }
-        ColorLayer[] layers = new ColorLayer[detections.size()];
-        int counter = 0;
-        for(int color : detections.keySet()){
-            if(counter % 100 == 0){
-                System.out.print(counter + " ColorLayers created.\r");
-                System.out.flush();
-            }
-            layers[counter] = new ColorLayer(color, detections.get(color));
-            counter++;
+        ArrayList<ColorLayer> layers = new ArrayList<>();
+        for(Entry<Integer, ArrayList<IntPoint>> item : detections.entrySet()){
+            layers.add(new ColorLayer(item.getKey(), item.getValue()));
         }
-        System.out.println(counter + " ColorLayers created.");
-        return layers;
+        System.out.println(layers.size() + " ColorLayers created.");
+        return layers.toArray(new ColorLayer[0]);
     }
     public static void main(String[] args) throws Exception{
-        final long startTime = System.currentTimeMillis();
+        final long startTime = System.nanoTime();
         BufferedImage original = ImageIO.read(new File("TestBitmaps/WeezerSmall.png"));
         final int width = original.getWidth();
         final int height = original.getHeight();
@@ -91,9 +87,9 @@ class Main{
             }
         }
         ps.close();
-        final long endTime = System.currentTimeMillis();
-        String seconds = leftPad(Long.toString(endTime-startTime), '0', 4);
-        seconds = seconds.substring(0,seconds.length()-3) + "." + seconds.substring(seconds.length()-3);
+        final long endTime = System.nanoTime();
+        String seconds = leftPad(Long.toString(endTime-startTime), '0', 10);
+        seconds = seconds.substring(0,seconds.length()-9) + "." + seconds.substring(seconds.length()-9);
         System.out.println("Finished in " + seconds + " seconds.");
     }
 }
