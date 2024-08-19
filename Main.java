@@ -37,7 +37,7 @@ class Main{
     }
     public static void main(String[] args) throws Exception{
         final long startTime = System.nanoTime();
-        BufferedImage original = ImageIO.read(new File("TestBitmaps/WeezerSmall.png"));
+        BufferedImage original = ImageIO.read(new File("TestBitmaps/Rings.png"));
         final int width = original.getWidth();
         final int height = original.getHeight();
         ColorLayer[] layers = createLayers(original);

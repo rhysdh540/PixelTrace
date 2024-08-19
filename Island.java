@@ -6,6 +6,7 @@ public class Island {
     static private final int LEFT = 2;
     static private final int UP = 3;
 
+    //For an explanation of the values in this table, see "Archive/Original Corner Table.png"
     static private final List<Map<Integer, Integer>> cornerTable = List.of(
         //Index 0 = Right
         Map.of(2,DOWN,8,UP,13,DOWN,9,UP,6,DOWN,7,UP),
