@@ -58,7 +58,7 @@ class Main{
         System.gc();
         System.out.println(layers.length + " ColorLayers chunked.");
         PrintSVG fileOut = new PrintSVG(new File("Testing.svg"));
-        fileOut.println("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\">");
+        fileOut.println("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + width + "\" height=\"" + height + "\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\">");
         fileOut.moreIndent();
         for(ColorLayer layer : layers){
             layer.printSVG(fileOut);
