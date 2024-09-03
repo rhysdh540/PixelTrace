@@ -57,36 +57,15 @@ class Main{
         }
         System.gc();
         System.out.println(layers.length + " ColorLayers chunked.");
-        //The structure of the following code is totally subject to change.
-        //I'm likely to implement a new class to automate more of the XML output process.
-        //For now I just wanted to hack someting together to start inspecing some visual output.
-        //(And also start profiling some of the code I've already written.)
-        ArrayList<String> svgLines = new ArrayList<>();
-        svgLines.add("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\">");
-        svgLines.add("+");
+        PrintSVG fileOut = new PrintSVG(new File("Testing.svg"));
+        fileOut.println("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\">");
+        fileOut.moreIndent();
         for(ColorLayer layer : layers){
-            layer.printSVG(svgLines);
+            layer.printSVG(fileOut);
         }
-        svgLines.add("-");
-        svgLines.add("</svg>");
-        int indent = 0;
-        PrintStream ps = new PrintStream(new FileOutputStream("Testing.svg", false), true);
-        for(String line : svgLines){
-            switch(line){
-                case "+":
-                    indent++;
-                    break;
-                case "-":
-                    indent--;
-                    break;
-                default:
-                    ps.print("    ".repeat(indent));
-                    ps.print(line);
-                    ps.print("\n");
-                    break;
-            }
-        }
-        ps.close();
+        fileOut.lessIndent();
+        fileOut.print("</svg>");
+        fileOut.close();
         final long endTime = System.nanoTime();
         String seconds = leftPad(Long.toString(endTime-startTime), '0', 10);
         seconds = seconds.substring(0,seconds.length()-9) + "." + seconds.substring(seconds.length()-9);

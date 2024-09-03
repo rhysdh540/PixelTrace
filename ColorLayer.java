@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.*;
 
 public class ColorLayer implements Comparable<ColorLayer>{
@@ -199,18 +200,18 @@ public class ColorLayer implements Comparable<ColorLayer>{
         }
     }
 
-    public void printSVG(ArrayList<String> lines){
+    public void printSVG(PrintSVG out) throws IOException{
         String colorStr = "#" + Main.leftPad(Integer.toHexString(color & 0xFFFFFF).toUpperCase(), '0', 6);
         if(children.length == 1){
-            lines.add("<path fill=\"" + colorStr + "\" d=\"" + children[0].pathTrace() + "\" />");
+            out.println("<path fill=\"" + colorStr + "\" d=\"" + children[0].pathTrace() + "\" />");
         } else {
-            lines.add("<g fill=\"" + colorStr + "\">");
-            lines.add("+");
+            out.println("<g fill=\"" + colorStr + "\">");
+            out.moreIndent();
             for(Island child : children){
-                lines.add("<path d=\"" + child.pathTrace() + "\" />");
+                out.println("<path d=\"" + child.pathTrace() + "\" />");
             }
-            lines.add("-");
-            lines.add("</g>");
+            out.lessIndent();
+            out.println("</g>");
         }
     }
 }
