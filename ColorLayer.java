@@ -36,7 +36,6 @@ public class ColorLayer implements Comparable<ColorLayer>{
         for(IntPoint p : detections){
             mask.setBit(p.x-x_min, p.y-y_min, true);
         }
-        children = new Island[0];
     }
 
     public String debugInfo(){
@@ -117,7 +116,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         for(int y=0; y<mask.height; y++){
             for(int x=0; x<mask.width; x++){
                 if(grid[y][x] == -1){
-                    FloodFills.fourDirectionFill(grid, new IntPoint(x, y), -1, islandCount);
+                    FloodFills.fourDirectionFill(grid, x, y, -1, islandCount);
                     islandCount++;
                 }
             }

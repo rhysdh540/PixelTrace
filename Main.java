@@ -37,7 +37,7 @@ class Main{
     }
     public static void main(String[] args) throws Exception{
         final long startTime = System.nanoTime();
-        BufferedImage original = ImageIO.read(new File("TestBitmaps/WeezerSmall.png"));
+        BufferedImage original = ImageIO.read(new File("TestBitmaps/ski_censored.png"));
         final int width = original.getWidth();
         final int height = original.getHeight();
         ColorLayer[] layers = createLayers(original);
@@ -49,7 +49,7 @@ class Main{
                 System.out.print(i + " ColorLayers chunked.\r");
                 System.out.flush();
                 if(i % 1000 == 0){
-                    System.gc();
+//                    System.gc();
                 }
             }
             //Index math necessary: ColorLayers sorted back-to-front, but must be traced front-to-back.

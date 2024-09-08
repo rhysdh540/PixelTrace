@@ -5,7 +5,7 @@ import javax.imageio.ImageIO;
 public class BitGrid {
     public final int width;
     public final int height;
-    private long[] binData;
+    private final long[] binData;
 
     public BitGrid(int new_width, int new_height){
         if(new_width < 1){
