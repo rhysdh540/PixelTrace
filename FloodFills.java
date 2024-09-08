@@ -1,43 +1,41 @@
-import java.util.ArrayDeque;
-
 public class FloodFills {
     public static void fourDirectionFill(int[][] grid, IntPoint start, int target, int newVal){
-        ArrayDeque<IntPoint> points = new ArrayDeque<>();
-        points.addLast(start);
+        IntQueue points = new IntQueue(grid.length * grid[0].length * 4);
+        points.add(start.x, start.y);
         while(!points.isEmpty()){
-            IntPoint cur = points.pollFirst();
-            if(cur.x < 0) continue;
-            if(cur.x >= grid[0].length) continue;
-            if(cur.y < 0) continue;
-            if(cur.y >= grid.length) continue;
-            if(grid[cur.y][cur.x] != target) continue;
-            grid[cur.y][cur.x] = newVal;
-            points.addLast(new IntPoint(cur.x-1, cur.y));
-            points.addLast(new IntPoint(cur.x+1, cur.y));
-            points.addLast(new IntPoint(cur.x, cur.y-1));
-            points.addLast(new IntPoint(cur.x, cur.y+1));
+            int x = points.poll();
+            int y = points.poll();
+            if(grid[y][x] != target) continue;
+            grid[y][x] = newVal;
+
+            if(x > 0) points.add(x-1, y);
+            if(x < grid[0].length - 1) points.add(x+1, y);
+            if(y > 0) points.add(x, y-1);
+            if(y < grid.length - 1) points.add(x, y+1);
         }
     }
 
     public static void eightDirectionFill(int[][] grid, IntPoint start, int target, int newVal){
-        ArrayDeque<IntPoint> points = new ArrayDeque<>();
-        points.addLast(start);
+        IntQueue points = new IntQueue(grid.length * grid[0].length * 8);
+        points.add(start.x, start.y);
         while(!points.isEmpty()){
-            IntPoint cur = points.pollFirst();
-            if(cur.x < 0) continue;
-            if(cur.x >= grid[0].length) continue;
-            if(cur.y < 0) continue;
-            if(cur.y >= grid.length) continue;
-            if(grid[cur.y][cur.x] != target) continue;
-            grid[cur.y][cur.x] = newVal;
-            points.addLast(new IntPoint(cur.x-1, cur.y-1));
-            points.addLast(new IntPoint(cur.x-1, cur.y));
-            points.addLast(new IntPoint(cur.x-1, cur.y+1));
-            points.addLast(new IntPoint(cur.x, cur.y-1));
-            points.addLast(new IntPoint(cur.x, cur.y+1));
-            points.addLast(new IntPoint(cur.x+1, cur.y-1));
-            points.addLast(new IntPoint(cur.x+1, cur.y));
-            points.addLast(new IntPoint(cur.x+1, cur.y+1));
+            int x = points.poll();
+            int y = points.poll();
+            if(grid[y][x] != target) continue;
+            grid[y][x] = newVal;
+
+            if(x > 0){
+                points.add(x-1, y);
+                if(y > 0) points.add(x-1, y-1);
+                if(y < grid.length - 1) points.add(x-1, y+1);
+            }
+            if(x < grid[0].length - 1){
+                points.add(x+1, y);
+                if(y > 0) points.add(x+1, y-1);
+                if(y < grid.length - 1) points.add(x+1, y+1);
+            }
+            if(y > 0) points.add(x, y-1);
+            if(y < grid.length - 1) points.add(x, y+1);
         }
     }
 }
