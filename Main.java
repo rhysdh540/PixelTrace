@@ -6,10 +6,12 @@ import java.awt.image.BufferedImage;
 
 class Main{
     public static String leftPad(String original, char pad, int minLength){
-        StringBuilder sb = new StringBuilder(original);
-        while(sb.length() < minLength) sb.insert(0, pad);
-        return sb.toString();
-    }
+        int paddingLength = minLength - original.length();
+		if(paddingLength <= 0) return original;
+		char[] padding = new char[paddingLength];
+		Arrays.fill(padding, pad);
+		return new String(padding) + original;
+	}
 
     private static ColorLayer[] createLayers(BufferedImage bitmap){
         final int width = bitmap.getWidth();
@@ -19,13 +21,7 @@ class Main{
             for(int x=0; x<width; x++){
                 //TODO: Remove this alpha channel coercion when alpha support is ready.
                 int color = bitmap.getRGB(x, y) | 0xFF000000;
-                if(detections.containsKey(color)){
-                    detections.get(color).add(new IntPoint(x, y));
-                } else {
-                    ArrayList<IntPoint> newList = new ArrayList<>();
-                    newList.add(new IntPoint(x, y));
-                    detections.put(color, newList);
-                }
+                detections.computeIfAbsent(color, _ -> new ArrayList<>()).add(new IntPoint(x, y));
             }
         }
         ArrayList<ColorLayer> layers = new ArrayList<>();
@@ -41,8 +37,8 @@ class Main{
         final int width = original.getWidth();
         final int height = original.getHeight();
         ColorLayer[] layers = createLayers(original);
-        System.gc();
         Arrays.sort(layers);
+        System.gc();
         BitGrid stackedBits = new BitGrid(width, height);
         for(int i=0; i<layers.length; i++){
             if(i % 100 == 0){
@@ -67,8 +63,8 @@ class Main{
         fileOut.print("</svg>");
         fileOut.close();
         final long endTime = System.nanoTime();
-        String seconds = leftPad(Long.toString(endTime-startTime), '0', 10);
-        seconds = seconds.substring(0,seconds.length()-9) + "." + seconds.substring(seconds.length()-9);
-        System.out.println("Finished in " + seconds + " seconds.");
+        long durationInNanos = endTime - startTime;
+        double seconds = durationInNanos / 1_000_000_000.0;
+        System.out.printf("Finished in %.9f seconds.%n", seconds);
     }
 }

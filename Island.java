@@ -41,15 +41,13 @@ public class Island {
 				}
 			}
 		}
-		for(int x=0; x<pixels.width; x++){
-			if(grid[0][x] == -1) FloodFills.eightDirectionFill(grid, x, 0, -1, -2);
+		for (int x = 0; x < pixels.width; x++) {
+			if (grid[0][x] == -1) FloodFills.eightDirectionFill(grid, x, 0, -1, -2);
+			if (grid[pixels.height - 1][x] == -1) FloodFills.eightDirectionFill(grid, x, pixels.height - 1, -1, -2);
 		}
-		for(int y=1; y<pixels.height; y++){
-			if(grid[y][0] == -1) FloodFills.eightDirectionFill(grid, 0, y, -1, -2);
-			if(grid[y][pixels.width-1] == -1) FloodFills.eightDirectionFill(grid, pixels.width-1, y, -1, -2);
-		}
-		for(int x=1; x<pixels.width-1; x++){
-			if(grid[pixels.height-1][x] == -1) FloodFills.eightDirectionFill(grid, x, pixels.height-1, -1, -2);
+		for (int y = 1; y < pixels.height - 1; y++) {
+			if (grid[y][0] == -1) FloodFills.eightDirectionFill(grid, 0, y, -1, -2);
+			if (grid[y][pixels.width - 1] == -1) FloodFills.eightDirectionFill(grid, pixels.width - 1, y, -1, -2);
 		}
 		int childCount = 0;
 		for(int y=0; y<pixels.height; y++){
@@ -69,10 +67,10 @@ public class Island {
 			for(int y=0; y<pixels.height; y++){
 				for(int x=0; x<pixels.width; x++){
 					if(grid[y][x] == i){
-						local_x_min = Math.min(local_x_min, x);
-						local_x_max = Math.max(local_x_max, x);
-						local_y_min = Math.min(local_y_min, y);
-						local_y_max = Math.max(local_y_max, y);
+						if(x < local_x_min) local_x_min = x;
+						if(x > local_x_max) local_x_max = x;
+						if(y < local_y_min) local_y_min = y;
+						if(y > local_y_max) local_y_max = y;
 					}
 				}
 			}
@@ -91,19 +89,17 @@ public class Island {
 	}
 
     private boolean safeLookup(int x, int y){
-        if(x < 0) return false;
-        if(x >= pixels.width) return false;
-        if(y < 0) return false;
-        if(y >= pixels.height) return false;
-        return pixels.getBit(x, y);
-    }
+		return x >= 0 && x < pixels.width
+				&& y >= 0 && y < pixels.height
+				&& pixels.getBit(x, y);
+	}
 
     private int fourSquareVal(int x, int y){
-        int eight = safeLookup(x-1, y-1) ? 8 : 0;
-        int four = safeLookup(x, y-1) ? 4 : 0;
-        int two = safeLookup(x-1, y) ? 2 : 0;
-        int one = safeLookup(x, y) ? 1 : 0;
-        return eight | four | two | one;
+        int topLeft = safeLookup(x-1, y-1) ? 8 : 0;
+        int top = safeLookup(x, y-1) ? 4 : 0;
+        int left = safeLookup(x-1, y) ? 2 : 0;
+        int center = safeLookup(x, y) ? 1 : 0;
+        return topLeft | top | left | center;
     }
 
     private IntPoint findUpperLeftCorner(){
@@ -129,30 +125,27 @@ public class Island {
             int turn = cornerTable.get(direction).getOrDefault(fourSquareVal(cur_x, cur_y), -1);
             if(turn >= 0){
                 if((direction == RIGHT) || (direction == LEFT)){ //Horizontal Line
-                    buf.append(" h ");
-                    buf.append(cur_x - prev_x);
+					int deltaX = cur_x - prev_x;
+					if (deltaX != 0) {
+						buf.append(" h ").append(deltaX);
+					}
                     prev_x = cur_x;
                 } else { //Vertical Line
-                    buf.append(" v ");
-                    buf.append(cur_y - prev_y);
+					int deltaY = cur_y - prev_y;
+					if (deltaY != 0) {
+						buf.append(" v ").append(deltaY);
+					}
                     prev_y = cur_y;
                 }
                 direction = turn;
             }
-            switch(direction){
-                case RIGHT:
-                    cur_x++;
-                    break;
-                case DOWN:
-                    cur_y++;
-                    break;
-                case LEFT:
-                    cur_x--;
-                    break;
-                default: //case UP
-                    cur_y--;
-                    break;
-            }
+			switch(direction) {
+				case RIGHT -> cur_x++;
+				case DOWN -> cur_y++;
+				case LEFT -> cur_x--;
+				case UP -> cur_y--;
+				default -> throw new IllegalStateException("Unexpected value: " + direction);
+			}
         }
         buf.append(" z");
         for(Island child : children){

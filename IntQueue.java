@@ -2,15 +2,16 @@ public class IntQueue {
 	private final int[] arr;
 	private int head = 0;
 	private int tail = 0;
+	private int size = 0;
 
-	public final int capacity;
+	private final int arraySize;
 
 	public IntQueue(int capacity){
-		arr = new int[this.capacity = capacity + 1];
+		arr = new int[this.arraySize = capacity + 1];
 	}
 
 	private int wrapIncrement(int i){
-		if(++i == capacity) i = 0;
+		if(++i == arraySize) i = 0;
 		return i;
 	}
 
@@ -19,6 +20,7 @@ public class IntQueue {
 		if((tail = wrapIncrement(tail)) == head){
 			throw new IllegalStateException("Queue is full.");
 		}
+		size++;
 	}
 
 	public int poll(){
@@ -27,19 +29,27 @@ public class IntQueue {
 		}
 		int result = arr[head];
 		head = wrapIncrement(head);
+		size--;
 		return result;
 	}
 
 	public void add(int a, int b){
+		if(size() + 2 > arraySize - 1) {
+			throw new IllegalStateException("Not enough space to add two elements.");
+		}
 		add(a);
 		add(b);
 	}
 
-	public boolean isEmpty(){
+	public final boolean isEmpty(){
 		return head == tail;
 	}
 
 	public int size(){
-		return (tail - head + arr.length) % arr.length;
+		return size;
+	}
+
+	public int capacity(){
+		return arraySize - 1;
 	}
 }

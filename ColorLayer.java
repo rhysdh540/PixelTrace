@@ -82,16 +82,15 @@ public class ColorLayer implements Comparable<ColorLayer>{
     }
 
     private int[] getMatchedIslands(int[][] grid){
-        HashSet<Integer> matchedIslands = new HashSet<>();
+        BitSet matchedIslands = new BitSet();
         for(int y=0; y<mask.height; y++){
             for(int x=0; x<mask.width; x++){
-                int check = grid[y][x];
                 if(mask.getBit(x, y)){
-                    matchedIslands.add(check);
+                    matchedIslands.set(grid[y][x]);
                 }
             }
         }
-        return matchedIslands.stream().mapToInt(i->i).sorted().toArray();
+        return matchedIslands.stream().toArray();
     }
 
     public void generateChildren(BitGrid prevMask){
@@ -132,10 +131,10 @@ public class ColorLayer implements Comparable<ColorLayer>{
             for(int y=0; y<mask.height; y++){
                 for(int x=0; x<mask.width; x++){
                     if(grid[y][x] == index){
-                        local_x_min = Math.min(local_x_min, x);
-                        local_x_max = Math.max(local_x_max, x);
-                        local_y_min = Math.min(local_y_min, y);
-                        local_y_max = Math.max(local_y_max, y);
+                        if(x < local_x_min) local_x_min = x;
+                        if(x > local_x_max) local_x_max = x;
+                        if(y < local_y_min) local_y_min = y;
+                        if(y > local_y_max) local_y_max = y;
                     }
                 }
             }
@@ -155,11 +154,11 @@ public class ColorLayer implements Comparable<ColorLayer>{
 
     public void printSVG(PrintSVG out) throws IOException{
         String colorStr = "#" + Main.leftPad(Integer.toHexString(color & 0xFFFFFF).toUpperCase(), '0', 6);
-        out.print("<path fill=\"" + colorStr + "\" d=\"" + children[0].pathTrace());
+        StringBuilder pathBuilder = new StringBuilder();
+        pathBuilder.append("<path fill=\"").append(colorStr).append("\" d=\"").append(children[0].pathTrace());
         for(int i=1; i<children.length; i++){
-            out.print(" ");
-            out.print(children[i].pathTrace());
+            pathBuilder.append(" ").append(children[i].pathTrace());
         }
-        out.println("\" />");
+        out.println(pathBuilder.append("\" />").toString());
     }
 }
