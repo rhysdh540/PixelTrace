@@ -82,44 +82,12 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return area_compare;
     }
 
-    private int[] determineValidIslands(int[][] grid){
-        //"Accessible" islands either touch the outer border of this ColorLayer,
-        //or else come into contact with some "-1" somewhere on the island's edge.
-        //Islands that don't match either of those criteria must be entirely surrounded by "-2",
-        //and are thus supposed to be saved for a later recursive pass.
-        HashSet<Integer> accessibleIslands = new HashSet<>();
-        for(int x=0; x<mask.width; x++){
-            int check = grid[0][x];
-            if(check >= 0) accessibleIslands.add(check);
-        }
-        for(int y=1; y<mask.height; y++){
-            int check = grid[y][0];
-            if(check >= 0) accessibleIslands.add(check);
-            check = grid[y][mask.width-1];
-            if(check >= 0) accessibleIslands.add(check);
-        }
-        for(int x=1; x<mask.width-1; x++){
-            int check = grid[mask.height-1][x];
-            if(check >= 0) accessibleIslands.add(check);
-        }
-        for(int y=1; y<mask.height-1; y++){
-            for(int x=1; x<mask.width-1; x++){
-                int check = grid[y][x];
-                if(check >= 0){
-                    int up = grid[y-1][x];
-                    int down = grid[y+1][x];
-                    int left = grid[y][x-1];
-                    int right = grid[y][x+1];
-                    if((up == -1) || (down == -1) || (left == -1) || (right == -1)) accessibleIslands.add(check);
-                }
-            }
-        }
-        //"Matched" islands are Accessible islands that actually do contain some of this ColorLayer's assigned color.
+    private int[] getMatchedIslands(int[][] grid){
         HashSet<Integer> matchedIslands = new HashSet<>();
         for(int y=0; y<mask.height; y++){
             for(int x=0; x<mask.width; x++){
                 int check = grid[y][x];
-                if(accessibleIslands.contains(check) && mask.getBit(x, y)){
+                if(mask.getBit(x, y)){
                     matchedIslands.add(check);
                 }
             }
@@ -154,21 +122,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
                 }
             }
         }
-        //Scan edges to change outer ocean from -2 to -1
-        for(int x=0; x<mask.width; x++){
-            if(grid[0][x] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(x, 0), -2, -1);
-        }
-        for(int y=1; y<mask.height; y++){
-            if(grid[y][0] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(0, y), -2, -1);
-            if(grid[y][mask.width-1] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(mask.width-1, y), -2, -1);
-        }
-        for(int x=1; x<mask.width-1; x++){
-            if(grid[mask.height-1][x] == -2) FloodFills.eightDirectionFill(grid, new IntPoint(x, mask.height-1), -2, -1);
-        }
-        //At this point, the only cells with -2 in them must be inner trapped pools inside islands.
-        //(Specifically pools that cannot be accessed from the outer edge by eight-directional travel.)
-        //Now it's time to validate which islands are top-level.
-        int[] validIslands = determineValidIslands(grid);
+        int[] validIslands = getMatchedIslands(grid);
         children = new Island[validIslands.length];
         for(int i=0; i<validIslands.length; i++){
             int index = validIslands[i];
@@ -196,7 +150,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
                     }
                 }
             }
-            children[i] = new Island(local_x_min + x_min, local_y_min + y_min, islandBits);
+            children[i] = new Island(local_x_min + x_min, local_y_min + y_min, islandBits, true);
         }
     }
 
@@ -205,13 +159,12 @@ public class ColorLayer implements Comparable<ColorLayer>{
         if(children.length == 1){
             out.println("<path fill=\"" + colorStr + "\" d=\"" + children[0].pathTrace() + "\" />");
         } else {
-            out.println("<g fill=\"" + colorStr + "\">");
-            out.moreIndent();
-            for(Island child : children){
-                out.println("<path d=\"" + child.pathTrace() + "\" />");
+            out.print("<path fill=\"" + colorStr + "\" d=\"" + children[0].pathTrace());
+            for(int i=1; i<children.length; i++){
+                out.print(" ");
+                out.print(children[i].pathTrace());
             }
-            out.lessIndent();
-            out.println("</g>");
+            out.println("\" />");
         }
     }
 }
