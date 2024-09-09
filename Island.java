@@ -27,68 +27,66 @@ public class Island {
         global_x_min = x_min;
         global_y_min = y_min;
         pixels = pixels_input;
-		if(!canHaveChildren) {
-			return;
-		}
+        if(!canHaveChildren) return;
 
-		int[][] grid = new int[pixels.height][pixels.width];
-		for(int y=0; y<pixels.height; y++){
-			for(int x=0; x<pixels.width; x++){
-				if(pixels.getBit(x, y)){
-					grid[y][x] = -2;
-				} else {
-					grid[y][x] = -1;
-				}
-			}
-		}
-		for(int x=0; x<pixels.width; x++){
-			if(grid[0][x] == -1) FloodFills.eightDirectionFill(grid, new IntPoint(x, 0), -1, -2);
-		}
-		for(int y=1; y<pixels.height; y++){
-			if(grid[y][0] == -1) FloodFills.eightDirectionFill(grid, new IntPoint(0, y), -1, -2);
-			if(grid[y][pixels.width-1] == -1) FloodFills.eightDirectionFill(grid, new IntPoint(pixels.width-1, y), -1, -2);
-		}
-		for(int x=1; x<pixels.width-1; x++){
-			if(grid[pixels.height-1][x] == -1) FloodFills.eightDirectionFill(grid, new IntPoint(x, pixels.height-1), -1, -2);
-		}
-		int childCount = 0;
-		for(int y=0; y<pixels.height; y++){
-			for(int x=0; x<pixels.width; x++){
-				if(grid[y][x] == -1){
-					FloodFills.fourDirectionFill(grid, new IntPoint(x, y), -1, childCount);
-					childCount++;
-				}
-			}
-		}
-		children = new Island[childCount];
-		for(int i=0; i<childCount; i++){
-			int local_x_min = pixels.width;
-			int local_x_max = -1;
-			int local_y_min = pixels.height;
-			int local_y_max = -1;
-			for(int y=0; y<pixels.height; y++){
-				for(int x=0; x<pixels.width; x++){
-					if(grid[y][x] == i){
-						local_x_min = Math.min(local_x_min, x);
-						local_x_max = Math.max(local_x_max, x);
-						local_y_min = Math.min(local_y_min, y);
-						local_y_max = Math.max(local_y_max, y);
-					}
-				}
-			}
-			int child_width = (local_x_max - local_x_min) + 1;
-			int child_height = (local_y_max - local_y_min) + 1;
-			BitGrid childBits = new BitGrid(child_width, child_height);
-			for(int y=local_y_min; y<=local_y_max; y++){
-				for(int x=local_x_min; x<=local_x_max; x++){
-					if(grid[y][x] == i){
-						childBits.setBit(x-local_x_min, y-local_y_min, true);
-					}
-				}
-			}
-			children[i] = new Island(local_x_min + global_x_min, local_y_min + global_y_min, childBits, false);
-		}
-	}
+        int[][] grid = new int[pixels.height][pixels.width];
+        for(int y=0; y<pixels.height; y++){
+            for(int x=0; x<pixels.width; x++){
+                if(pixels.getBit(x, y)){
+                    grid[y][x] = -2;
+                } else {
+                    grid[y][x] = -1;
+                }
+            }
+        }
+        for(int x=0; x<pixels.width; x++){
+            if(grid[0][x] == -1) FloodFills.eightDirectionFill(grid, new IntPoint(x, 0), -1, -2);
+        }
+        for(int y=1; y<pixels.height; y++){
+            if(grid[y][0] == -1) FloodFills.eightDirectionFill(grid, new IntPoint(0, y), -1, -2);
+            if(grid[y][pixels.width-1] == -1) FloodFills.eightDirectionFill(grid, new IntPoint(pixels.width-1, y), -1, -2);
+        }
+        for(int x=1; x<pixels.width-1; x++){
+            if(grid[pixels.height-1][x] == -1) FloodFills.eightDirectionFill(grid, new IntPoint(x, pixels.height-1), -1, -2);
+        }
+        int childCount = 0;
+        for(int y=0; y<pixels.height; y++){
+            for(int x=0; x<pixels.width; x++){
+                if(grid[y][x] == -1){
+                    FloodFills.fourDirectionFill(grid, new IntPoint(x, y), -1, childCount);
+                    childCount++;
+                }
+            }
+        }
+        children = new Island[childCount];
+        for(int i=0; i<childCount; i++){
+            int local_x_min = pixels.width;
+            int local_x_max = -1;
+            int local_y_min = pixels.height;
+            int local_y_max = -1;
+            for(int y=0; y<pixels.height; y++){
+                for(int x=0; x<pixels.width; x++){
+                    if(grid[y][x] == i){
+                        local_x_min = Math.min(local_x_min, x);
+                        local_x_max = Math.max(local_x_max, x);
+                        local_y_min = Math.min(local_y_min, y);
+                        local_y_max = Math.max(local_y_max, y);
+                    }
+                }
+            }
+            int child_width = (local_x_max - local_x_min) + 1;
+            int child_height = (local_y_max - local_y_min) + 1;
+            BitGrid childBits = new BitGrid(child_width, child_height);
+            for(int y=local_y_min; y<=local_y_max; y++){
+                for(int x=local_x_min; x<=local_x_max; x++){
+                    if(grid[y][x] == i){
+                        childBits.setBit(x-local_x_min, y-local_y_min, true);
+                    }
+                }
+            }
+            children[i] = new Island(local_x_min + global_x_min, local_y_min + global_y_min, childBits, false);
+        }
+    }
 
     private boolean safeLookup(int x, int y){
         if(x < 0) return false;
