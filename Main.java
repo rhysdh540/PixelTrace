@@ -41,21 +41,16 @@ class Main{
         final int width = original.getWidth();
         final int height = original.getHeight();
         ColorLayer[] layers = createLayers(original);
-        System.gc();
         Arrays.sort(layers);
         BitGrid stackedBits = new BitGrid(width, height);
         for(int i=0; i<layers.length; i++){
             if(i % 100 == 0){
                 System.out.print(i + " ColorLayers chunked.\r");
                 System.out.flush();
-                if(i % 1000 == 0){
-                    System.gc();
-                }
             }
             //Index math necessary: ColorLayers sorted back-to-front, but must be traced front-to-back.
             layers[layers.length-1-i].generateChildren(stackedBits);
         }
-        System.gc();
         System.out.println(layers.length + " ColorLayers chunked.");
         PrintSVG fileOut = new PrintSVG(new File("Testing.svg"));
         fileOut.println("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + width + "\" height=\"" + height + "\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\" fill-rule=\"evenodd\">");

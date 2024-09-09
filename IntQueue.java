@@ -1,67 +1,54 @@
-import java.util.Arrays;
-import java.util.NoSuchElementException;
-
 public class IntQueue {
     private int[] arr;
     private int head = 0;
     private int tail = 0;
 
     public IntQueue(int capacity){
-        arr = new int[capacity + 1];
-        Arrays.fill(arr, Integer.MIN_VALUE);
+        arr = new int[Math.max(capacity, 4)]; //Four seems a sane minimum capacity to me.
     }
 
     public IntQueue(){
         this(64);
     }
 
-    private void grow(){
-        final int oldCapacity = arr.length;
-        int amountToAdd = (oldCapacity < 64) ? (oldCapacity + 2) : (oldCapacity >> 1);
-
-        int[] newElements = new int[oldCapacity + amountToAdd];
-        System.arraycopy(arr, 0, newElements, 0, arr.length);
-        arr = newElements;
-
-        if (tail < head || (tail == head && arr[tail] != Integer.MIN_VALUE)) {
-            // either the queue wraps around the end or its full (and the ending element isn't null, which shouldn't happen)
-            // so move elements from head to the old end to the new end
-            // for example if the old capacity was 10 and head was 5, elements 5-9 would be moved to position 15-19
-            System.arraycopy(arr, head,
-                    arr, head + amountToAdd,
-                    oldCapacity - head);
-
-            for (int i = head; i < head + amountToAdd; i++)
-                arr[i] = Integer.MIN_VALUE;
-            head += amountToAdd;
-        }
-    }
-
     private int wrapIncrement(int i){
-        return ++i >= arr.length ? 0 : i;
+        return (i + 1) % arr.length;
 	}
 
     public void add(int i){
+        if(wrapIncrement(tail) == head){
+            int[] newArr = new int[arr.length + Math.max(arr.length>>1, 4)];
+            if(head < tail){
+                //Queue contents are not wrapped around the edge.
+                int len = tail - head;
+                System.arraycopy(arr, head, newArr, 0, len);
+                tail = len;
+            } else {
+                //Queue contents are wrapped around the edge, and will now be un-wrapped.
+                int headLen = arr.length - head;
+                System.arraycopy(arr, head, newArr, 0, headLen);
+                System.arraycopy(arr, 0, newArr, headLen, tail);
+                tail = tail + headLen;
+            }
+            head = 0;
+            arr = newArr;
+        }
         arr[tail] = i;
         tail = wrapIncrement(tail);
-        if (head == tail)
-            grow();
-    }
-
-    public int poll(){
-        int i = arr[head];
-        if(i == Integer.MIN_VALUE) {
-            throw new NoSuchElementException();
-        } else {
-            arr[head] = Integer.MIN_VALUE;
-            head = wrapIncrement(head);
-            return i;
-        }
     }
 
     public void add(int a, int b){
         add(a);
         add(b);
+    }
+
+    public int poll(){
+        if(isEmpty()){
+            throw new IllegalStateException("IntQueue is empty.");
+        }
+        int result = arr[head];
+        head = wrapIncrement(head);
+        return result;
     }
 
     public boolean isEmpty(){
