@@ -1,6 +1,6 @@
 public class FloodFills {
     public static void fourDirectionFill(int[][] grid, IntPoint start, int target, int newVal){
-        IntQueue points = new IntQueue(grid.length * grid[0].length * 4);
+        IntQueue points = new IntQueue();
         points.add(start.x, start.y);
         while(!points.isEmpty()){
             int x = points.poll();
@@ -16,7 +16,7 @@ public class FloodFills {
     }
 
     public static void eightDirectionFill(int[][] grid, IntPoint start, int target, int newVal){
-        IntQueue points = new IntQueue(grid.length * grid[0].length * 8);
+        IntQueue points = new IntQueue();
         points.add(start.x, start.y);
         while(!points.isEmpty()){
             int x = points.poll();
