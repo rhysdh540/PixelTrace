@@ -1,14 +1,16 @@
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 
 public class PrintSVG {
-    private PrintStream ps = null;
+    private BufferedWriter bw = null;
     private int indentAmount = 0;
     private String indent = "";
     private boolean startOfLine = true;
 
-    public PrintSVG(File output) throws FileNotFoundException{
-        ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output, false)), true, StandardCharsets.UTF_8);
+    public PrintSVG(File output) throws IOException{
+        //ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output, false)), true, StandardCharsets.UTF_8);
+        bw = Files.newBufferedWriter(output.toPath(), StandardCharsets.UTF_8);
     }
 
     private void updateIndent(){
@@ -28,18 +30,26 @@ public class PrintSVG {
     }
 
     public void print(String input) throws IOException{
-        if(ps == null) throw new IOException("Attempting to write to a closed PrintSVG.");
-        if(startOfLine) ps.print(indent);
-        ps.print(input);
-        startOfLine = input.charAt(input.length() - 1) == '\n';
+        if(bw == null) throw new IOException("Attempting to write to a closed PrintSVG.");
+        if(startOfLine) bw.write(indent);
+        bw.write(input);
+        startOfLine = input.endsWith("\n");
+    }
+
+    public void print(int input) throws IOException{
+        print(Integer.toString(input));
     }
 
     public void println(String input) throws IOException{
         print(input + "\n");
     }
 
-    public void close(){
-        ps.close();
-        ps = null;
+    public void println(int input) throws IOException{
+        println(Integer.toString(input));
+    }
+
+    public void close() throws IOException{
+        bw.close();
+        bw = null;
     }
 }

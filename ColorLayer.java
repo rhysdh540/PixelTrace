@@ -156,10 +156,11 @@ public class ColorLayer implements Comparable<ColorLayer>{
 
     public void printSVG(PrintSVG out) throws IOException{
         String colorStr = "#" + Main.leftPad(Integer.toHexString(color & 0xFFFFFF).toUpperCase(), '0', 6);
-        out.print("<path fill=\"" + colorStr + "\" d=\"" + children[0].pathTrace());
+        out.print("<path fill=\"" + colorStr + "\" d=\"");
+        children[0].pathTrace(out);
         for(int i=1; i<children.length; i++){
             out.print(" ");
-            out.print(children[i].pathTrace());
+            children[i].pathTrace(out);
         }
         out.println("\" />");
     }

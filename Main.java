@@ -55,9 +55,14 @@ class Main{
         PrintSVG fileOut = new PrintSVG(new File("Testing.svg"));
         fileOut.println("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + width + "\" height=\"" + height + "\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\" fill-rule=\"evenodd\">");
         fileOut.moreIndent();
-        for(ColorLayer layer : layers){
-            layer.printSVG(fileOut);
+        for(int i=0; i<layers.length; i++){
+            if(i % 1000 == 0){
+                System.out.print(i + " ColorLayers written.\r");
+                System.out.flush();
+            }
+            layers[i].printSVG(fileOut);
         }
+        System.out.println(layers.length + " ColorLayers written.");
         fileOut.lessIndent();
         fileOut.print("</svg>");
         fileOut.close();
