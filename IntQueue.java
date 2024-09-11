@@ -13,7 +13,12 @@ public class IntQueue {
     }
 
     private int wrapIncrement(int i){
-        return (i + 1) % arr.length;
+        i++;
+        //Note for future maintainers:
+        //Thou shalt NOT replace the following with a modulo.
+        //This is MEASURABLY faster.
+        //Sincerely, Obscure (Joey)
+        return (i >= arr.length) ? 0 : i;
 	}
 
     public void add(int i){

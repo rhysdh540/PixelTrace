@@ -48,15 +48,20 @@ class Main{
             layers[layers.length-1-i].generateChildren(stackedBits);
         }
         System.out.println(layers.length + " ColorLayers chunked.");
-        try(PrintSVG fileOut = new PrintSVG(new File("Testing.svg"))) {
-            fileOut.println("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + width + "\" height=\"" + height + "\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\" fill-rule=\"evenodd\">");
-            fileOut.moreIndent();
-            for(ColorLayer layer : layers) {
-                layer.printSVG(fileOut);
+        PrintSVG fileOut = new PrintSVG(new File("Testing.svg"));
+        fileOut.println("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + width + "\" height=\"" + height + "\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\" fill-rule=\"evenodd\">");
+        fileOut.moreIndent();
+        for(int i=0; i<layers.length; i++){
+            if(i % 1000 == 0){
+                System.out.print(i + " ColorLayers written.\r");
+                System.out.flush();
             }
-            fileOut.lessIndent();
-            fileOut.print("</svg>");
+            layers[i].printSVG(fileOut);
         }
+        System.out.println(layers.length + " ColorLayers written.");
+        fileOut.lessIndent();
+        fileOut.print("</svg>");
+        fileOut.close();
         final long endTime = System.nanoTime();
         long durationInNanos = endTime - startTime;
         double seconds = durationInNanos / 1_000_000_000.0;

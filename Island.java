@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.*;
 
 public class Island {
@@ -111,27 +112,29 @@ public class Island {
         return new IntPoint(0, 0); //Just in case...
     }
 
-    public String pathTrace(){
+    public void pathTrace(PrintSVG out) throws IOException{
         IntPoint start = findUpperLeftCorner();
         int prev_x = start.x;
         int prev_y = start.y;
         int cur_x = start.x+1;
         int cur_y = start.y;
         int direction = RIGHT;
-        StringBuilder buf = new StringBuilder("M " + (global_x_min + start.x) + " " + (global_y_min + start.y));
+        out.print("M " + (global_x_min + start.x) + " " + (global_y_min + start.y));
         while((cur_x != start.x) || (cur_y != start.y)){
             int turn = cornerTable.get(direction).getOrDefault(fourSquareVal(cur_x, cur_y), -1);
             if(turn >= 0){
                 if((direction == RIGHT) || (direction == LEFT)){ //Horizontal Line
                     int deltaX = cur_x - prev_x;
                     if(deltaX != 0) {
-                        buf.append(" h ").append(deltaX);
+						out.print(" h ");
+						out.print(deltaX);
                     }
                     prev_x = cur_x;
                 } else { //Vertical Line
                     int deltaY = cur_y - prev_y;
                     if(deltaY != 0) {
-                        buf.append(" v ").append(deltaY);
+						out.print(" v ");
+						out.print(deltaY);
                     }
                     prev_y = cur_y;
                 }
@@ -145,11 +148,10 @@ public class Island {
                 default -> throw new IllegalStateException("Unexpected value: " + direction);
 			}
         }
-        buf.append(" z");
+        out.print(" z");
         for(Island child : children){
-            buf.append(" ");
-            buf.append(child.pathTrace());
+            out.print(" ");
+            child.pathTrace(out);
         }
-        return buf.toString();
     }
 }
