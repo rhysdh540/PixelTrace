@@ -64,7 +64,7 @@ public class BitGrid {
         BufferedImage canvas = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY);
         for(int y=0; y<height; y++){
             for(int x=0; x<width; x++){
-				canvas.setRGB(x, y, getBit(x, y) ? -1 : 0);
+                canvas.setRGB(x, y, getBit(x, y) ? -1 : 0);
             }
         }
         ImageIO.write(canvas, "PNG", new FileOutputStream(location, false));

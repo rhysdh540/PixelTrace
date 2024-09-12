@@ -88,10 +88,10 @@ public class Island {
     }
 
     private boolean safeLookup(int x, int y){
-		return x >= 0 && x < pixels.width
+        return x >= 0 && x < pixels.width
                 && y >= 0 && y < pixels.height
                 && pixels.getBit(x, y);
-	}
+    }
 
     private int fourSquareVal(int x, int y){
         int topLeft = safeLookup(x-1, y-1) ? 8 : 0;
@@ -126,27 +126,27 @@ public class Island {
                 if((direction == RIGHT) || (direction == LEFT)){ //Horizontal Line
                     int deltaX = cur_x - prev_x;
                     if(deltaX != 0) {
-						out.print(" h ");
-						out.print(deltaX);
+                        out.print(" h ");
+                        out.print(deltaX);
                     }
                     prev_x = cur_x;
                 } else { //Vertical Line
                     int deltaY = cur_y - prev_y;
                     if(deltaY != 0) {
-						out.print(" v ");
-						out.print(deltaY);
+                        out.print(" v ");
+                        out.print(deltaY);
                     }
                     prev_y = cur_y;
                 }
                 direction = turn;
             }
-			switch(direction) {
-				case RIGHT -> cur_x++;
-				case DOWN -> cur_y++;
-				case LEFT -> cur_x--;
-				case UP -> cur_y--;
+            switch(direction) {
+                case RIGHT -> cur_x++;
+                case DOWN -> cur_y++;
+                case LEFT -> cur_x--;
+                case UP -> cur_y--;
                 default -> throw new IllegalStateException("Unexpected value: " + direction);
-			}
+            }
         }
         out.print(" z");
         for(Island child : children){

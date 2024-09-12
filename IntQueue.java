@@ -19,7 +19,7 @@ public class IntQueue {
         //This is MEASURABLY faster.
         //Sincerely, Obscure (Joey)
         return (i >= arr.length) ? 0 : i;
-	}
+    }
 
     public void add(int i){
         if(wrapIncrement(tail) == head){

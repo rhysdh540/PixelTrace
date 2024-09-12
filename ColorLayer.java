@@ -161,7 +161,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         children[0].pathTrace(out);
         for(int i=1; i<children.length; i++){
             out.print(" ");
-			children[i].pathTrace(out);
+            children[i].pathTrace(out);
         }
         out.println("\" />");
     }

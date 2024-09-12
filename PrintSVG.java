@@ -8,7 +8,7 @@ public class PrintSVG {
     private String indent = "";
     private boolean startOfLine = true;
 
-	private static final String[] indents = new String[256];
+    private static final String[] indents = new String[256];
 
     public PrintSVG(File output) throws IOException{
         //ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output, false)), true, StandardCharsets.UTF_8);
@@ -57,7 +57,7 @@ public class PrintSVG {
         checkClosed();
         if(startOfLine) bw.write(indent);
         bw.write(input);
-		bw.newLine();
+        bw.newLine();
         startOfLine = true;
     }
 
