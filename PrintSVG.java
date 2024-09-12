@@ -25,8 +25,11 @@ public class PrintSVG {
             String indent = indents[indentAmount];
             if(indent == null) {
                 indent = " ".repeat(indentAmount * 4);
-                indents[indentAmount] = (this.indent = indent);
+                indents[indentAmount] = indent;
             }
+            this.indent = indent;
+        } else {
+            this.indent = " ".repeat(indentAmount * 4);
         }
     }
 
@@ -46,7 +49,7 @@ public class PrintSVG {
         checkClosed();
         if(startOfLine) bw.write(indent);
         bw.write(input);
-        startOfLine = input.endsWith("\n");
+        startOfLine = input.charAt(input.length()-1) == '\n';
     }
 
     public void print(int input) throws IOException{
