@@ -48,7 +48,7 @@ public class PrintSVG {
         checkClosed();
         if(startOfLine) bw.write(indent);
         bw.write(input);
-        bw.newLine();
+        bw.write('\n');
         startOfLine = true;
     }
 
