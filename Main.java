@@ -48,7 +48,7 @@ class Main{
             layers[layers.length-1-i].generateChildren(stackedBits);
         }
         System.out.println(layers.length + " ColorLayers chunked.");
-        PrintSVG fileOut = new PrintSVG(new File("Testing.svg"));
+        PrintSVG fileOut = new PrintSVG(new File("Testing.svg"), "    ");
         fileOut.println("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + width + "\" height=\"" + height + "\" viewBox=\"0 0 " + width + " " + height + "\" shape-rendering=\"crispEdges\" fill-rule=\"evenodd\">");
         fileOut.moreIndent();
         for(int i=0; i<layers.length; i++){

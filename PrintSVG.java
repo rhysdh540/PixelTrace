@@ -3,34 +3,22 @@ import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 
 public class PrintSVG {
-    private BufferedWriter bw = null;
+    private BufferedWriter bw;
+
+    private final String indentStr;
     private int indentAmount = 0;
     private String indent = "";
+
     private boolean startOfLine = true;
 
-    private static final String[] indents = new String[256];
 
-    public PrintSVG(File output) throws IOException{
-        //ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(output, false)), true, StandardCharsets.UTF_8);
+    public PrintSVG(File output, String indent) throws IOException{
         bw = Files.newBufferedWriter(output.toPath(), StandardCharsets.UTF_8);
+        indentStr = indent;
     }
 
     private void updateIndent(){
-        int indentAmount = this.indentAmount;
-        if(indentAmount == indent.length() / 4) {
-            return;
-        }
-
-        if(indentAmount < indents.length) {
-            String indent = indents[indentAmount];
-            if(indent == null) {
-                indent = " ".repeat(indentAmount * 4);
-                indents[indentAmount] = indent;
-            }
-            this.indent = indent;
-        } else {
-            this.indent = " ".repeat(indentAmount * 4);
-        }
+        indent = indentStr.repeat(indentAmount);
     }
 
     public void moreIndent(){
