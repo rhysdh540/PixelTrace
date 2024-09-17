@@ -124,18 +124,12 @@ public class Island {
             int turn = cornerTable.get(direction).getOrDefault(fourSquareVal(cur_x, cur_y), -1);
             if(turn >= 0){
                 if((direction == RIGHT) || (direction == LEFT)){ //Horizontal Line
-                    int deltaX = cur_x - prev_x;
-                    if(deltaX != 0) {
-                        out.print(" h ");
-                        out.print(deltaX);
-                    }
+                    out.print(" h ");
+                    out.print(cur_x - prev_x);
                     prev_x = cur_x;
                 } else { //Vertical Line
-                    int deltaY = cur_y - prev_y;
-                    if(deltaY != 0) {
-                        out.print(" v ");
-                        out.print(deltaY);
-                    }
+                    out.print(" v ");
+                    out.print(cur_y - prev_y);
                     prev_y = cur_y;
                 }
                 direction = turn;
