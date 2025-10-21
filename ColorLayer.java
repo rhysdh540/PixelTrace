@@ -86,26 +86,37 @@ public class ColorLayer implements Comparable<ColorLayer>{
         final int localHeight = mask.height;
         final int size = localWidth * localHeight;
 
+        // First, merge this layer into the global prevMask (same as main)
         for(int y=0; y<localHeight; y++){
             final int globalY = y + y_min;
             for(int x=0; x<localWidth; x++){
-                boolean m = mask.getBit(x, y);
-                if(m){
+                if(mask.getBit(x, y)){
                     prevMask.setBit(x + x_min, globalY, true);
                 }
             }
         }
 
-        UnionFind uf = buildUnionFind(localWidth, localHeight, mask);
+        UnionFind uf = buildUnionFind(localWidth, localHeight, prevMask);
 
-        // Map roots to island indices
+        // Determine which components intersect the current layer's mask
+        BitSet matchedRoots = new BitSet(size);
+        for(int y=0; y<localHeight; y++){
+            for(int x=0; x<localWidth; x++){
+                if(!mask.getBit(x, y)) continue; // only consider this color's pixels
+                int root = uf.find(x, y);
+                matchedRoots.set(root);
+            }
+        }
+
+        // Map matched roots to island indices in row-major order of first occurrence
         int[] rootToIndex = new int[size];
         Arrays.fill(rootToIndex, -1);
         int islandCount = 0;
         for(int y=0; y<localHeight; y++){
             for(int x=0; x<localWidth; x++){
-                if(!mask.getBit(x, y)) continue;
+                if(!prevMask.getBit(x + x_min, y + y_min)) continue; // only solids
                 int root = uf.find(x, y);
+                if(!matchedRoots.get(root)) continue; // skip components that don't touch this color
                 if(rootToIndex[root] == -1){
                     rootToIndex[root] = islandCount++;
                 }
@@ -129,9 +140,10 @@ public class ColorLayer implements Comparable<ColorLayer>{
 
         for(int y=0; y<localHeight; y++){
             for(int x=0; x<localWidth; x++){
-                if(!mask.getBit(x, y)) continue;
+                if(!prevMask.getBit(x + x_min, y + y_min)) continue;
                 int root = uf.find(x, y);
                 int idx = rootToIndex[root];
+                if(idx < 0) continue;
                 if(x < local_x_min[idx]) local_x_min[idx] = x;
                 if(x > local_x_max[idx]) local_x_max[idx] = x;
                 if(y < local_y_min[idx]) local_y_min[idx] = y;
@@ -151,9 +163,9 @@ public class ColorLayer implements Comparable<ColorLayer>{
         // populate island BitGrids
         for(int y=0; y<localHeight; y++){
             for(int x=0; x<localWidth; x++){
-                if(!mask.getBit(x, y)) continue;
-                int root = uf.find(x, y);
-                int idx = rootToIndex[root];
+                if(!prevMask.getBit(x + x_min, y + y_min)) continue;
+                int idx = rootToIndex[uf.find(x, y)];
+                if(idx < 0) continue;
                 islandBits[idx].setBit(x - local_x_min[idx], y - local_y_min[idx], true);
             }
         }
@@ -163,20 +175,22 @@ public class ColorLayer implements Comparable<ColorLayer>{
         }
     }
 
-    private static UnionFind buildUnionFind(int width, int height, BitGrid mask) {
+    private UnionFind buildUnionFind(int width, int height, BitGrid mask){
         UnionFind uf = new UnionFind(width, height);
 
         for(int y = 0; y< height; y++){
+            int gy = y + y_min;
             for(int x = 0; x< width; x++){
-                if(!mask.getBit(x, y)) continue;
+                int gx = x + x_min;
+                if(!mask.getBit(gx, gy)) continue;
 
                 // left
-                if(x > 0 && mask.getBit(x-1, y)){
+                if(x > 0 && mask.getBit(gx-1, gy)){
                     uf.union(x-1, y, x, y);
                 }
 
                 // up
-                if(y > 0 && mask.getBit(x, y-1)){
+                if(y > 0 && mask.getBit(gx, gy-1)){
                     uf.union(x, y-1, x, y);
                 }
             }
