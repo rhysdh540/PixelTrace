@@ -93,62 +93,155 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return matchedIslands.stream().toArray();
     }
 
-    public void generateChildren(BitGrid prevMask){
-        for(int y=y_min; y<=y_max; y++){
-            for(int x=x_min; x<=x_max; x++){
-                if(mask.getBit(x-x_min, y-y_min)){
-                    prevMask.setBit(x, y, true);
-                }
+    public void generateChildren(BitGrid prevMask) {
+        // a horizontal run of solid pixels in prevMask
+        record Run(int y, int x0, int x1, boolean touchesMask, int parentIndex) {}
+
+        final int W = mask.width;
+        final int H = mask.height;
+
+        // merge this layer into previous (for next layer's processing)
+        for (int y = 0; y < H; y++) {
+            final int gy = y + y_min;
+            for (int x = 0; x < W; x++) {
+                if (mask.getBit(x, y)) prevMask.setBit(x + x_min, gy, true);
             }
         }
-        int[][] grid = new int[mask.height][mask.width];
-        for(int y=y_min; y<=y_max; y++){
-            for(int x=x_min; x<=x_max; x++){
-                if(prevMask.getBit(x, y)){
-                    grid[y-y_min][x-x_min] = -1;
+
+        List<Run> runs = new ArrayList<>();
+
+        // indices of the first/last runs in each row
+        int[] rowStarts = new int[H];
+        int[] rowEnds = new int[H];
+
+        // populate runs from prevMask
+        for (int y = 0; y < H; y++) {
+            rowStarts[y] = runs.size();
+            final int gy = y + y_min;
+
+            int x = 0;
+            while (x < W) {
+                // find start of a solid run in prevMask
+                while (x < W && !prevMask.getBit(x + x_min, gy)) x++;
+                if (x >= W) break;
+                int x0 = x;
+                boolean touched = false;
+                // extend run; track if it touches current color's mask
+                do {
+                    if (!touched && mask.getBit(x, y)) touched = true;
+                    x++;
+                } while (x < W && prevMask.getBit(x + x_min, gy));
+
+                int x1 = x - 1;
+
+                Run r = new Run(y, x0, x1, touched, runs.size());
+                runs.add(r);
+            }
+            rowEnds[y] = runs.size();
+        }
+
+        int totalRuns = runs.size();
+        if (totalRuns == 0) {
+            children = EMPTY_ISLANDS;
+            return;
+        }
+
+        UnionFind uf = new UnionFind(totalRuns);
+
+        // connect runs between adjacent rows
+        for (int y = 1; y < H; y++) {
+            int prevStart = rowStarts[y-1], prevEnd = rowEnds[y-1];
+            int currStart = rowStarts[y], currEnd = rowEnds[y];
+
+            while (prevStart < prevEnd && currStart < currEnd) {
+                Run prev = runs.get(prevStart);
+                Run curr = runs.get(currStart);
+
+                // they overlap if their x-ranges intersect
+				if (Math.max(prev.x0, curr.x0) <= Math.min(prev.x1, curr.x1)) {
+                    uf.union(prevStart, currStart);
+                    // advance the one that ends first
+                    if (prev.x1 < curr.x1) {
+                        prevStart++;
+                    } else {
+                        currStart++;
+                    }
                 } else {
-                    grid[y-y_min][x-x_min] = -2;
-                }
-            }
-        }
-        int islandCount = 0;
-        for(int y=0; y<mask.height; y++){
-            for(int x=0; x<mask.width; x++){
-                if(grid[y][x] == -1){
-                    FloodFills.fourDirectionFill(grid, x, y, -1, islandCount);
-                    islandCount++;
-                }
-            }
-        }
-        int[] validIslands = getMatchedIslands(grid);
-        children = new Island[validIslands.length];
-        for(int i=0; i<validIslands.length; i++){
-            int index = validIslands[i];
-            int local_x_min = mask.width;
-            int local_x_max = -1;
-            int local_y_min = mask.height;
-            int local_y_max = -1;
-            for(int y=0; y<mask.height; y++){
-                for(int x=0; x<mask.width; x++){
-                    if(grid[y][x] == index){
-                        local_x_min = Math.min(local_x_min, x);
-                        local_x_max = Math.max(local_x_max, x);
-                        local_y_min = Math.min(local_y_min, y);
-                        local_y_max = Math.max(local_y_max, y);
+                    if (prev.x1 < curr.x0) {
+                        prevStart++;
+                    } else {
+                        currStart++;
                     }
                 }
             }
-            int island_width = (local_x_max - local_x_min) + 1;
-            int island_height = (local_y_max - local_y_min) + 1;
-            BitGrid islandBits = new BitGrid(island_width, island_height);
-            for(int y=local_y_min; y<=local_y_max; y++){
-                for(int x=local_x_min; x<=local_x_max; x++){
-                    if(grid[y][x] == index){
-                        islandBits.setBit(x-local_x_min, y-local_y_min, true);
-                    }
-                }
+        }
+
+        // filter the connected components to only those touching the mask
+        // any not touching the mask aren't part of this color layer
+        int[] rootToIdx = new int[totalRuns];
+        Arrays.fill(rootToIdx, -1);
+        BitSet keepRoots = new BitSet();
+
+        for (int r = 0; r < totalRuns; r++) {
+            if (runs.get(r).touchesMask) {
+                keepRoots.set(uf.find(r));
             }
-            children[i] = new Island(local_x_min + x_min, local_y_min + y_min, islandBits, true);
+        }
+
+        int kept = 0;
+        for (int r = 0; r < totalRuns; r++) {
+            int rr = uf.find(r);
+            if (!keepRoots.get(rr)) continue;
+            if (rootToIdx[rr] == -1) {
+                rootToIdx[rr] = kept++;
+            }
+        }
+
+        if (kept == 0) {
+            children = EMPTY_ISLANDS;
+            return;
+        }
+
+        int[] minX = new int[kept], maxX = new int[kept];
+        int[] minY = new int[kept], maxY = new int[kept];
+        Arrays.fill(minX, W);
+        Arrays.fill(minY, H);
+        Arrays.fill(maxX, -1);
+        Arrays.fill(maxY, -1);
+
+        for (int r = 0; r < totalRuns; r++) {
+            int idx = rootToIdx[uf.find(r)];
+            if (idx == -1) continue;
+			Run run = runs.get(r);
+            if (run.x0 < minX[idx]) minX[idx] = run.x0;
+            if (run.x1 > maxX[idx]) maxX[idx] = run.x1;
+            if (run.y < minY[idx]) minY[idx] = run.y;
+            if (run.y > maxY[idx]) maxY[idx] = run.y;
+        }
+
+        children = new Island[kept];
+        BitGrid[] bits = new BitGrid[kept];
+        for (int i = 0; i < kept; i++) {
+            int w = (maxX[i] - minX[i]) + 1;
+            int h = (maxY[i] - minY[i]) + 1;
+            bits[i] = new BitGrid(w, h);
+        }
+
+        for (int r = 0; r < totalRuns; r++) {
+            int idx = rootToIdx[uf.find(r)];
+            if (idx == -1) continue; // not kept
+            Run run = runs.get(r);
+            int localY = run.y - minY[idx];
+            int startX = run.x0 - minX[idx];
+            int len = run.x1 - run.x0 + 1;
+            // Paint the span
+            for (int dx = 0; dx < len; dx++) {
+                bits[idx].setBit(startX + dx, localY, true);
+            }
+        }
+
+        for (int i = 0; i < kept; i++) {
+            children[i] = new Island(minX[i] + x_min, minY[i] + y_min, bits[i], true);
         }
     }
 
