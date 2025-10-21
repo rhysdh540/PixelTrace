@@ -93,153 +93,62 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return matchedIslands.stream().toArray();
     }
 
-    public void generateChildren(BitGrid prevMask) {
-        // a horizontal run of solid pixels in prevMask
-        record Run(int y, int x0, int x1, boolean touchesMask, int parentIndex) {}
-
+    public void generateChildren(BitGrid prevMask){
         final int W = mask.width;
         final int H = mask.height;
 
         // merge this layer into previous (for next layer's processing)
-        for (int y = 0; y < H; y++) {
+        for(int y=0; y<H; y++){
             final int gy = y + y_min;
-            for (int x = 0; x < W; x++) {
-                if (mask.getBit(x, y)) prevMask.setBit(x + x_min, gy, true);
+            for(int x=0; x<W; x++){
+                if(mask.getBit(x, y)) prevMask.setBit(x + x_min, gy, true);
             }
         }
 
-        List<Run> runs = new ArrayList<>();
-
-        // indices of the first/last runs in each row
-        int[] rowStarts = new int[H];
-        int[] rowEnds = new int[H];
-
-        // populate runs from prevMask
-        for (int y = 0; y < H; y++) {
-            rowStarts[y] = runs.size();
-            final int gy = y + y_min;
-
-            int x = 0;
-            while (x < W) {
-                // find start of a solid run in prevMask
-                while (x < W && !prevMask.getBit(x + x_min, gy)) x++;
-                if (x >= W) break;
-                int x0 = x;
-                boolean touched = false;
-                // extend run; track if it touches current color's mask
-                do {
-                    if (!touched && mask.getBit(x, y)) touched = true;
-                    x++;
-                } while (x < W && prevMask.getBit(x + x_min, gy));
-
-                int x1 = x - 1;
-
-                Run r = new Run(y, x0, x1, touched, runs.size());
-                runs.add(r);
-            }
-            rowEnds[y] = runs.size();
-        }
-
-        int totalRuns = runs.size();
-        if (totalRuns == 0) {
+        // collect runs of true pixels in prevMask over this layer's bounding box
+        ConnectedComponentLabeling.RunSet set = ConnectedComponentLabeling.collectRuns(prevMask, x_min, y_min, W, H, true);
+        int totalRuns = set.size();
+        if(totalRuns == 0){
             children = EMPTY_ISLANDS;
             return;
         }
 
-        UnionFind uf = new UnionFind(totalRuns);
-
-        // connect runs between adjacent rows
-        for (int y = 1; y < H; y++) {
-            int prevStart = rowStarts[y-1], prevEnd = rowEnds[y-1];
-            int currStart = rowStarts[y], currEnd = rowEnds[y];
-
-            while (prevStart < prevEnd && currStart < currEnd) {
-                Run prev = runs.get(prevStart);
-                Run curr = runs.get(currStart);
-
-                // they overlap if their x-ranges intersect
-				if (Math.max(prev.x0, curr.x0) <= Math.min(prev.x1, curr.x1)) {
-                    uf.union(prevStart, currStart);
-                    // advance the one that ends first
-                    if (prev.x1 < curr.x1) {
-                        prevStart++;
-                    } else {
-                        currStart++;
-                    }
-                } else {
-                    if (prev.x1 < curr.x0) {
-                        prevStart++;
-                    } else {
-                        currStart++;
-                    }
+        // determine which runs touch this layer's color mask
+        boolean[] touches = new boolean[totalRuns];
+        for(int idx=0; idx<totalRuns; idx++){
+            ConnectedComponentLabeling.Run r = set.runs().get(idx);
+            int y = r.y();
+            // short-circuit scan: any bit of current color mask within run range
+            for(int x=r.x0(); x<=r.x1(); x++){
+                if(mask.getBit(x, y)){
+                    touches[idx] = true;
+                    break;
                 }
             }
         }
 
-        // filter the connected islands to only those touching the mask
-        // any not touching the mask aren't part of this color layer
-        int[] rootToIdx = new int[totalRuns];
-        Arrays.fill(rootToIdx, -1);
-        BitSet keepRoots = new BitSet();
-
-        for (int r = 0; r < totalRuns; r++) {
-            if (runs.get(r).touchesMask) {
-                keepRoots.set(uf.find(r));
-            }
-        }
-
-        int kept = 0;
-        for (int r = 0; r < totalRuns; r++) {
-            int rr = uf.find(r);
-            if (!keepRoots.get(rr)) continue;
-            if (rootToIdx[rr] == -1) {
-                rootToIdx[rr] = kept++;
-            }
-        }
-
-        if (kept == 0) {
+        UnionFind uf = ConnectedComponentLabeling.unionRows(set, 0, 0, null);
+        BitSet keepRoots = ConnectedComponentLabeling.rootsWithFlags(uf, touches);
+        if(keepRoots.isEmpty()){
             children = EMPTY_ISLANDS;
             return;
         }
 
-        // determine bounding boxes of kept islands
+        int[] rootToIdx = ConnectedComponentLabeling.mapRoots(uf, totalRuns, keepRoots);
+        int kept = keepRoots.cardinality();
+        if(kept == 0){
+            children = EMPTY_ISLANDS;
+            return;
+        }
+
         int[] minX = new int[kept], maxX = new int[kept];
         int[] minY = new int[kept], maxY = new int[kept];
-        Arrays.fill(minX, W);
-        Arrays.fill(minY, H);
-        Arrays.fill(maxX, -1);
-        Arrays.fill(maxY, -1);
+        ConnectedComponentLabeling.computeBoundingBoxes(set, uf, rootToIdx, minX, maxX, minY, maxY);
+        BitGrid[] bits = ConnectedComponentLabeling.buildComponentGrids(set, uf, rootToIdx, minX, maxX, minY, maxY);
 
-        for (int r = 0; r < totalRuns; r++) {
-            int idx = rootToIdx[uf.find(r)];
-            if (idx == -1) continue;
-			Run run = runs.get(r);
-            if (run.x0 < minX[idx]) minX[idx] = run.x0;
-            if (run.x1 > maxX[idx]) maxX[idx] = run.x1;
-            if (run.y < minY[idx]) minY[idx] = run.y;
-            if (run.y > maxY[idx]) maxY[idx] = run.y;
-        }
-
-        // construct BitGrids for kept islands and populate them
         children = new Island[kept];
-        BitGrid[] bits = new BitGrid[kept];
-        for (int i = 0; i < kept; i++) {
-            int w = (maxX[i] - minX[i]) + 1;
-            int h = (maxY[i] - minY[i]) + 1;
-            bits[i] = new BitGrid(w, h);
-        }
 
-        for (int r = 0; r < totalRuns; r++) {
-            int idx = rootToIdx[uf.find(r)];
-            if (idx == -1) continue; // not kept
-            Run run = runs.get(r);
-            int localY = run.y - minY[idx];
-            int startX = run.x0 - minX[idx];
-            int len = run.x1 - run.x0 + 1;
-            bits[idx].setSpan(startX, localY, len, true);
-        }
-
-        for (int i = 0; i < kept; i++) {
+        for(int i=0; i<kept; i++){
             children[i] = new Island(minX[i] + x_min, minY[i] + y_min, bits[i], true);
         }
     }
