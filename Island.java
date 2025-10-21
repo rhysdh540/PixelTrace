@@ -37,69 +37,132 @@ public class Island {
 
         if(width<=2 || height<=2) return;
 
-        int[][] grid = new int[height][width];
+        // 8-neighbor union of background to find outside-connected background components
+        UnionFind uf8 = new UnionFind(width, height);
         for(int y=0; y<height; y++){
             for(int x=0; x<width; x++){
-                if(pixels.getBit(x, y)){
-                    grid[y][x] = -2;
-                } else {
-                    grid[y][x] = -1;
+                if(pixels.getBit(x, y)) continue; //Only background participates here
+                // Left neighbor
+                if(x > 0 && !pixels.getBit(x-1, y)) uf8.union(x-1, y, x, y);
+                if(y > 0){
+                    // Up
+                    if(!pixels.getBit(x, y-1)) uf8.union(x, y-1, x, y);
+                    // Up-left
+                    if(x > 0 && !pixels.getBit(x-1, y-1)) uf8.union(x-1, y-1, x, y);
+                    // Up-right
+                    if(x < width-1 && !pixels.getBit(x+1, y-1)) uf8.union(x+1, y-1, x, y);
                 }
             }
         }
+
+        // Mark all outside-connected background roots by scanning the border
+        final int size = width * height;
+        BitSet outsideRoots = new BitSet(size);
+        // Top and bottom rows
         for(int x=0; x<width; x++){
-            //This loop checks the top edge and the bottom edge.
-            if(grid[0][x] == -1) FloodFills.eightDirectionFill(grid, x, 0, -1, -2);
-            if(grid[height-1][x] == -1) FloodFills.eightDirectionFill(grid, x, height-1, -1, -2);
+            if(!pixels.getBit(x, 0)) outsideRoots.set(uf8.find(x, 0));
+            int by = height-1;
+            if(!pixels.getBit(x, by)) outsideRoots.set(uf8.find(x, by));
         }
+        // Left and right columns (skip corners already visited)
         for(int y=1; y<height-1; y++){
-            //This loop checks the left edge and the right edge,
-            //except we skip the topmost and bottommost pixels,
-            //because the previous loop already checked those.
-            if(grid[y][0] == -1) FloodFills.eightDirectionFill(grid, 0, y, -1, -2);
-            if(grid[y][width-1] == -1) FloodFills.eightDirectionFill(grid, width-1, y, -1, -2);
+            if(!pixels.getBit(0, y)) outsideRoots.set(uf8.find(0, y));
+            int rx = width-1;
+            if(!pixels.getBit(rx, y)) outsideRoots.set(uf8.find(rx, y));
         }
-        int childCount = 0;
+
+        // the remaining background pixels not connected to outside are hole candidates
+        boolean[] holeCandidate = new boolean[size];
+        int candidateCount = 0;
         for(int y=0; y<height; y++){
+            int base = y * width;
             for(int x=0; x<width; x++){
-                if(grid[y][x] == -1){
-                    FloodFills.fourDirectionFill(grid, x, y, -1, childCount);
-                    childCount++;
+                if(pixels.getBit(x, y)) continue;
+                int r8 = uf8.find(x, y);
+                if(!outsideRoots.get(r8)){
+                    holeCandidate[base + x] = true;
+                    candidateCount++;
                 }
             }
         }
-        children = new Island[childCount];
-        int[] child_x_min = new int[childCount];
+        if(candidateCount == 0){
+            children = new Island[0];
+            return;
+        }
+
+        // group hole candidates with 4-neighborhood union (left/up only)
+        UnionFind uf4 = new UnionFind(width, height);
+        for(int y=0; y<height; y++){
+            int base = y * width;
+            for(int x=0; x<width; x++){
+                if(!holeCandidate[base + x]) continue;
+                if(x > 0 && holeCandidate[base + (x-1)]) uf4.union(x-1, y, x, y);
+                if(y > 0 && holeCandidate[base - width + x]) uf4.union(x, y-1, x, y);
+            }
+        }
+
+        // Map roots to hole indices
+        int[] rootToIndex = new int[size];
+        Arrays.fill(rootToIndex, -1);
+        int holeCount = 0;
+        for(int y=0; y<height; y++){
+            int base = y * width;
+            for(int x=0; x<width; x++){
+                if(!holeCandidate[base + x]) continue;
+                int r4 = uf4.find(x, y);
+                if(rootToIndex[r4] == -1){
+                    rootToIndex[r4] = holeCount++;
+                }
+            }
+        }
+
+        if(holeCount == 0){
+            children = new Island[0];
+            return;
+        }
+
+		// Determine bounding box for each hole
+        int[] child_x_min = new int[holeCount];
         Arrays.fill(child_x_min, width);
-        int[] child_x_max = new int[childCount];
+        int[] child_x_max = new int[holeCount];
         Arrays.fill(child_x_max, -1);
-        int[] child_y_min = new int[childCount];
+        int[] child_y_min = new int[holeCount];
         Arrays.fill(child_y_min, height);
-        int[] child_y_max = new int[childCount];
+        int[] child_y_max = new int[holeCount];
         Arrays.fill(child_y_max, -1);
         for(int y=0; y<height; y++){
+            int base = y * width;
             for(int x=0; x<width; x++){
-                int id = grid[y][x];
-                if(id >= 0){
-                    child_x_min[id] = Math.min(child_x_min[id], x);
-                    child_x_max[id] = Math.max(child_x_max[id], x);
-                    child_y_min[id] = Math.min(child_y_min[id], y);
-                    child_y_max[id] = Math.max(child_y_max[id], y);
-                }
+                if(!holeCandidate[base + x]) continue;
+                int idx = rootToIndex[uf4.find(x, y)];
+                if(x < child_x_min[idx]) child_x_min[idx] = x;
+                if(x > child_x_max[idx]) child_x_max[idx] = x;
+                if(y < child_y_min[idx]) child_y_min[idx] = y;
+                if(y > child_y_max[idx]) child_y_max[idx] = y;
             }
         }
-        for(int i=0; i<childCount; i++){
+
+        // build BitGrid for each hole
+        children = new Island[holeCount];
+        BitGrid[] childBits = new BitGrid[holeCount];
+        for(int i=0; i<holeCount; i++){
             int child_width = (child_x_max[i] - child_x_min[i]) + 1;
             int child_height = (child_y_max[i] - child_y_min[i]) + 1;
-            BitGrid childBits = new BitGrid(child_width, child_height);
-            for(int y=child_y_min[i]; y<=child_y_max[i]; y++){
-                for(int x=child_x_min[i]; x<=child_x_max[i]; x++){
-                    if(grid[y][x] == i){
-                        childBits.setBit(x-child_x_min[i], y-child_y_min[i], true);
-                    }
-                }
+            childBits[i] = new BitGrid(child_width, child_height);
+        }
+
+		// populate hole BitGrids
+        for(int y=0; y<height; y++){
+            int base = y * width;
+            for(int x=0; x<width; x++){
+                if(!holeCandidate[base + x]) continue;
+                int idx = rootToIndex[uf4.find(x, y)];
+                childBits[idx].setBit(x - child_x_min[idx], y - child_y_min[idx], true);
             }
-            children[i] = new Island(child_x_min[i] + global_x_min, child_y_min[i] + global_y_min, childBits, false);
+        }
+
+        for(int i=0; i<holeCount; i++){
+            children[i] = new Island(child_x_min[i] + global_x_min, child_y_min[i] + global_y_min, childBits[i], false);
         }
     }
 

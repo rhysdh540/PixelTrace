@@ -163,11 +163,11 @@ public class ColorLayer implements Comparable<ColorLayer>{
         }
     }
 
-    private static UnionFind buildUnionFind(int localWidth, int localHeight, BitGrid mask) {
-        UnionFind uf = new UnionFind(localWidth, localHeight);
+    private static UnionFind buildUnionFind(int width, int height, BitGrid mask) {
+        UnionFind uf = new UnionFind(width, height);
 
-        for(int y = 0; y< localHeight; y++){
-            for(int x = 0; x< localWidth; x++){
+        for(int y = 0; y< height; y++){
+            for(int x = 0; x< width; x++){
                 if(!mask.getBit(x, y)) continue;
 
                 // left
