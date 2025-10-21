@@ -25,6 +25,8 @@ public class Island {
     private Island[] children = new Island[0];
 
     public Island(int x_min, int y_min, BitGrid pixels_input, boolean canHaveChildren){
+        record Run(int y, int x0, int x1) {}
+
         global_x_min = x_min;
         global_y_min = y_min;
         pixels = pixels_input;
@@ -37,69 +39,203 @@ public class Island {
 
         if(width<=2 || height<=2) return;
 
-        int[][] grid = new int[height][width];
+        // collect runs of background pixels (false bits)
+        final List<Run> runs = new ArrayList<>();
+        final int[] rowStarts = new int[height];
+        final int[] rowEnds = new int[height];
+
         for(int y=0; y<height; y++){
-            for(int x=0; x<width; x++){
-                if(pixels.getBit(x, y)){
-                    grid[y][x] = -2;
+            rowStarts[y] = runs.size();
+            int x = 0;
+            while(x < width){
+                // skip solids
+                while(x < width && pixels.getBit(x, y)) x++;
+                if(x >= width) break;
+
+                // found start of a background run
+                int x0 = x;
+                do {
+                    x++;
+                } while(x < width && !pixels.getBit(x, y));
+                int x1 = x - 1;
+
+                Run r = new Run(y, x0, x1);
+                runs.add(r);
+            }
+            rowEnds[y] = runs.size();
+        }
+
+        final int R = runs.size();
+        if(R == 0){ // No background = no holes
+            children = new Island[0];
+            return;
+        }
+
+        // side+corner union to identify "outside" background
+        // runs overlap if their x ranges intersect when expanded by 1 pixel on each side
+        UnionFind uf = new UnionFind(R);
+
+        for(int y=1; y<height; y++){
+            int prevStart = rowStarts[y-1], prevEnd = rowEnds[y-1];
+            int currStart = rowStarts[y], currEnd = rowEnds[y];
+
+            while (prevStart < prevEnd && currStart < currEnd) {
+                Run prev = runs.get(prevStart);
+                Run curr = runs.get(currStart);
+
+                if(Math.max(prev.x0 - 1, curr.x0) <= Math.min(prev.x1 + 1, curr.x1)){
+                    uf.union(prevStart, currStart);
+                    // advance the one that ends first
+                    if (prev.x1 < curr.x1) {
+                        prevStart++;
+                    } else {
+                        currStart++;
+                    }
                 } else {
-                    grid[y][x] = -1;
-                }
-            }
-        }
-        for(int x=0; x<width; x++){
-            //This loop checks the top edge and the bottom edge.
-            if(grid[0][x] == -1) FloodFills.eightDirectionFill(grid, x, 0, -1, -2);
-            if(grid[height-1][x] == -1) FloodFills.eightDirectionFill(grid, x, height-1, -1, -2);
-        }
-        for(int y=1; y<height-1; y++){
-            //This loop checks the left edge and the right edge,
-            //except we skip the topmost and bottommost pixels,
-            //because the previous loop already checked those.
-            if(grid[y][0] == -1) FloodFills.eightDirectionFill(grid, 0, y, -1, -2);
-            if(grid[y][width-1] == -1) FloodFills.eightDirectionFill(grid, width-1, y, -1, -2);
-        }
-        int childCount = 0;
-        for(int y=0; y<height; y++){
-            for(int x=0; x<width; x++){
-                if(grid[y][x] == -1){
-                    FloodFills.fourDirectionFill(grid, x, y, -1, childCount);
-                    childCount++;
-                }
-            }
-        }
-        children = new Island[childCount];
-        int[] child_x_min = new int[childCount];
-        Arrays.fill(child_x_min, width);
-        int[] child_x_max = new int[childCount];
-        Arrays.fill(child_x_max, -1);
-        int[] child_y_min = new int[childCount];
-        Arrays.fill(child_y_min, height);
-        int[] child_y_max = new int[childCount];
-        Arrays.fill(child_y_max, -1);
-        for(int y=0; y<height; y++){
-            for(int x=0; x<width; x++){
-                int id = grid[y][x];
-                if(id >= 0){
-                    child_x_min[id] = Math.min(child_x_min[id], x);
-                    child_x_max[id] = Math.max(child_x_max[id], x);
-                    child_y_min[id] = Math.min(child_y_min[id], y);
-                    child_y_max[id] = Math.max(child_y_max[id], y);
-                }
-            }
-        }
-        for(int i=0; i<childCount; i++){
-            int child_width = (child_x_max[i] - child_x_min[i]) + 1;
-            int child_height = (child_y_max[i] - child_y_min[i]) + 1;
-            BitGrid childBits = new BitGrid(child_width, child_height);
-            for(int y=child_y_min[i]; y<=child_y_max[i]; y++){
-                for(int x=child_x_min[i]; x<=child_x_max[i]; x++){
-                    if(grid[y][x] == i){
-                        childBits.setBit(x-child_x_min[i], y-child_y_min[i], true);
+                    if (prev.x1 < curr.x0) {
+                        prevStart++;
+                    } else {
+                        currStart++;
                     }
                 }
             }
-            children[i] = new Island(child_x_min[i] + global_x_min, child_y_min[i] + global_y_min, childBits, false);
+        }
+
+        // mark roots that touch the border as outside
+        boolean[] outsideRoot = new boolean[R];
+        for(int r = 0; r < R; r++){
+            Run run = runs.get(r);
+            if(run.y == 0 || run.y == height - 1 || run.x0 == 0 || run.x1 == width - 1){
+                outsideRoot[uf.find(r)] = true;
+            }
+        }
+
+        // propagate outside flags to all runs via roots
+        boolean[] isOutside = new boolean[R];
+        for(int r = 0; r < R; r++){
+            isOutside[r] = outsideRoot[uf.find(r)];
+        }
+
+        // if all background is outside, there are no holes
+        int anyInside = 0;
+        for(int r = 0; r < R; r++){
+            if(!isOutside[r]){
+                anyInside = 1;
+                break;
+            }
+        }
+
+        if(anyInside == 0){
+            children = new Island[0];
+            return;
+        }
+
+        // side union of the remaining (non-outside) background runs
+        uf = new UnionFind(R);
+
+        for(int y = 1; y < height; y++){
+            int prevStart = rowStarts[y - 1], prevEnd = rowEnds[y - 1];
+            int currStart = rowStarts[y], currEnd = rowEnds[y];
+
+            while(prevStart < prevEnd && currStart < currEnd){
+                Run prev = runs.get(prevStart);
+                Run curr = runs.get(currStart);
+
+                // skip runs that are outside (cannot form holes)
+                if(isOutside[prevStart]){
+                    prevStart++;
+                    continue;
+                }
+                if(isOutside[currStart]){
+                    currStart++;
+                    continue;
+                }
+
+                if(Math.max(prev.x0, curr.x0) <= Math.min(prev.x1, curr.x1)){
+                    uf.union(prevStart, currStart);
+                    // advance the one that ends first
+                    if(prev.x1 < curr.x1){
+                        prevStart++;
+                    } else {
+                        currStart++;
+                    }
+                } else {
+                    if(prev.x1 < curr.x0){
+                        prevStart++;
+                    } else {
+                        currStart++;
+                    }
+                }
+            }
+        }
+
+        // assign hole ids to each root
+        int[] rootToHole = new int[R];
+        Arrays.fill(rootToHole, -1);
+        int holeCount = 0;
+
+        for(int y = 0; y < height; y++){
+            for(int idx = rowStarts[y]; idx < rowEnds[y]; idx++){
+                if(isOutside[idx]) continue;
+                int root = uf.find(idx);
+                if(rootToHole[root] == -1){
+                    rootToHole[root] = holeCount++;
+                }
+            }
+        }
+
+        if(holeCount == 0){
+            children = new Island[0];
+            return;
+        }
+
+        // determine bounding boxes for each hole
+        int[] minX = new int[holeCount], maxX = new int[holeCount];
+        int[] minY = new int[holeCount], maxY = new int[holeCount];
+        Arrays.fill(minX, width);
+        Arrays.fill(maxX, -1);
+        Arrays.fill(minY, height);
+        Arrays.fill(maxY, -1);
+
+        for(int r = 0; r < R; r++){
+            if(isOutside[r]) continue;
+            int h = rootToHole[uf.find(r)];
+            if(h < 0) continue;
+            Run run = runs.get(r);
+            if(run.x0 < minX[h]) minX[h] = run.x0;
+            if(run.x1 > maxX[h]) maxX[h] = run.x1;
+            if(run.y < minY[h]) minY[h] = run.y;
+            if(run.y > maxY[h]) maxY[h] = run.y;
+        }
+
+        // create BitGrids for each hole and populate them
+        children = new Island[holeCount];
+        BitGrid[] grids = new BitGrid[holeCount];
+
+        for(int h = 0; h < holeCount; h++){
+            int w = (maxX[h] - minX[h]) + 1;
+            int hgt = (maxY[h] - minY[h]) + 1;
+            grids[h] = new BitGrid(w, hgt);
+        }
+
+        for(int r = 0; r < R; r++){
+            if(isOutside[r]) continue;
+            int hId = rootToHole[uf.find(r)];
+            if(hId < 0) continue;
+            Run run = runs.get(r);
+            int yLocal = run.y - minY[hId];
+            int xLocal = run.x0 - minX[hId];
+            int len = run.x1 - run.x0 + 1;
+            grids[hId].setSpan(xLocal, yLocal, len, true);
+        }
+
+        for(int h = 0; h < holeCount; h++){
+            children[h] = new Island(
+                    minX[h] + global_x_min,
+                    minY[h] + global_y_min,
+                    grids[h],
+                    false
+            );
         }
     }
 

@@ -176,7 +176,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
             }
         }
 
-        // filter the connected components to only those touching the mask
+        // filter the connected islands to only those touching the mask
         // any not touching the mask aren't part of this color layer
         int[] rootToIdx = new int[totalRuns];
         Arrays.fill(rootToIdx, -1);
@@ -202,6 +202,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
             return;
         }
 
+        // determine bounding boxes of kept islands
         int[] minX = new int[kept], maxX = new int[kept];
         int[] minY = new int[kept], maxY = new int[kept];
         Arrays.fill(minX, W);
@@ -219,6 +220,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
             if (run.y > maxY[idx]) maxY[idx] = run.y;
         }
 
+        // construct BitGrids for kept islands and populate them
         children = new Island[kept];
         BitGrid[] bits = new BitGrid[kept];
         for (int i = 0; i < kept; i++) {
