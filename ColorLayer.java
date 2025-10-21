@@ -81,75 +81,107 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return alpha_compare;
     }
 
-    private int[] getMatchedIslands(int[][] grid){
-        BitSet matchedIslands = new BitSet();
-        for(int y=0; y<mask.height; y++){
-            for(int x=0; x<mask.width; x++){
-                if(mask.getBit(x, y)){
-                    matchedIslands.set(grid[y][x]);
+    public void generateChildren(BitGrid prevMask){
+        final int localWidth = mask.width;
+        final int localHeight = mask.height;
+        final int size = localWidth * localHeight;
+
+        for(int y=0; y<localHeight; y++){
+            final int globalY = y + y_min;
+            for(int x=0; x<localWidth; x++){
+                boolean m = mask.getBit(x, y);
+                if(m){
+                    prevMask.setBit(x + x_min, globalY, true);
                 }
             }
         }
-        return matchedIslands.stream().toArray();
+
+        UnionFind uf = buildUnionFind(localWidth, localHeight, mask);
+
+        // Map roots to island indices
+        int[] rootToIndex = new int[size];
+        Arrays.fill(rootToIndex, -1);
+        int islandCount = 0;
+        for(int y=0; y<localHeight; y++){
+            for(int x=0; x<localWidth; x++){
+                if(!mask.getBit(x, y)) continue;
+                int root = uf.find(x, y);
+                if(rootToIndex[root] == -1){
+                    rootToIndex[root] = islandCount++;
+                }
+            }
+        }
+
+        if(islandCount == 0){
+            children = new Island[0];
+            return;
+        }
+
+        // Determine bounding box for each island
+        int[] local_x_min = new int[islandCount];
+        Arrays.fill(local_x_min, localWidth);
+        int[] local_x_max = new int[islandCount];
+        Arrays.fill(local_x_max, -1);
+        int[] local_y_min = new int[islandCount];
+        Arrays.fill(local_y_min, localHeight);
+        int[] local_y_max = new int[islandCount];
+        Arrays.fill(local_y_max, -1);
+
+        for(int y=0; y<localHeight; y++){
+            for(int x=0; x<localWidth; x++){
+                if(!mask.getBit(x, y)) continue;
+                int root = uf.find(x, y);
+                int idx = rootToIndex[root];
+                if(x < local_x_min[idx]) local_x_min[idx] = x;
+                if(x > local_x_max[idx]) local_x_max[idx] = x;
+                if(y < local_y_min[idx]) local_y_min[idx] = y;
+                if(y > local_y_max[idx]) local_y_max[idx] = y;
+            }
+        }
+
+        // build BitGrid for each island
+        children = new Island[islandCount];
+        BitGrid[] islandBits = new BitGrid[islandCount];
+        for(int i=0; i<islandCount; i++){
+            int island_width = (local_x_max[i] - local_x_min[i]) + 1;
+            int island_height = (local_y_max[i] - local_y_min[i]) + 1;
+            islandBits[i] = new BitGrid(island_width, island_height);
+        }
+
+        // populate island BitGrids
+        for(int y=0; y<localHeight; y++){
+            for(int x=0; x<localWidth; x++){
+                if(!mask.getBit(x, y)) continue;
+                int root = uf.find(x, y);
+                int idx = rootToIndex[root];
+                islandBits[idx].setBit(x - local_x_min[idx], y - local_y_min[idx], true);
+            }
+        }
+
+        for(int i=0; i<islandCount; i++){
+            children[i] = new Island(local_x_min[i] + x_min, local_y_min[i] + y_min, islandBits[i], true);
+        }
     }
 
-    public void generateChildren(BitGrid prevMask){
-        for(int y=y_min; y<=y_max; y++){
-            for(int x=x_min; x<=x_max; x++){
-                if(mask.getBit(x-x_min, y-y_min)){
-                    prevMask.setBit(x, y, true);
+    private static UnionFind buildUnionFind(int localWidth, int localHeight, BitGrid mask) {
+        UnionFind uf = new UnionFind(localWidth, localHeight);
+
+        for(int y = 0; y< localHeight; y++){
+            for(int x = 0; x< localWidth; x++){
+                if(!mask.getBit(x, y)) continue;
+
+                // left
+                if(x > 0 && mask.getBit(x-1, y)){
+                    uf.union(x-1, y, x, y);
+                }
+
+                // up
+                if(y > 0 && mask.getBit(x, y-1)){
+                    uf.union(x, y-1, x, y);
                 }
             }
         }
-        int[][] grid = new int[mask.height][mask.width];
-        for(int y=y_min; y<=y_max; y++){
-            for(int x=x_min; x<=x_max; x++){
-                if(prevMask.getBit(x, y)){
-                    grid[y-y_min][x-x_min] = -1;
-                } else {
-                    grid[y-y_min][x-x_min] = -2;
-                }
-            }
-        }
-        int islandCount = 0;
-        for(int y=0; y<mask.height; y++){
-            for(int x=0; x<mask.width; x++){
-                if(grid[y][x] == -1){
-                    FloodFills.fourDirectionFill(grid, x, y, -1, islandCount);
-                    islandCount++;
-                }
-            }
-        }
-        int[] validIslands = getMatchedIslands(grid);
-        children = new Island[validIslands.length];
-        for(int i=0; i<validIslands.length; i++){
-            int index = validIslands[i];
-            int local_x_min = mask.width;
-            int local_x_max = -1;
-            int local_y_min = mask.height;
-            int local_y_max = -1;
-            for(int y=0; y<mask.height; y++){
-                for(int x=0; x<mask.width; x++){
-                    if(grid[y][x] == index){
-                        local_x_min = Math.min(local_x_min, x);
-                        local_x_max = Math.max(local_x_max, x);
-                        local_y_min = Math.min(local_y_min, y);
-                        local_y_max = Math.max(local_y_max, y);
-                    }
-                }
-            }
-            int island_width = (local_x_max - local_x_min) + 1;
-            int island_height = (local_y_max - local_y_min) + 1;
-            BitGrid islandBits = new BitGrid(island_width, island_height);
-            for(int y=local_y_min; y<=local_y_max; y++){
-                for(int x=local_x_min; x<=local_x_max; x++){
-                    if(grid[y][x] == index){
-                        islandBits.setBit(x-local_x_min, y-local_y_min, true);
-                    }
-                }
-            }
-            children[i] = new Island(local_x_min + x_min, local_y_min + y_min, islandBits, true);
-        }
+        return uf;
     }
 
     public void printSVG(ObscurePrint out) throws IOException {
