@@ -81,18 +81,6 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return alpha_compare;
     }
 
-    private int[] getMatchedIslands(int[][] grid){
-        BitSet matchedIslands = new BitSet();
-        for(int y=0; y<mask.height; y++){
-            for(int x=0; x<mask.width; x++){
-                if(mask.getBit(x, y)){
-                    matchedIslands.set(grid[y][x]);
-                }
-            }
-        }
-        return matchedIslands.stream().toArray();
-    }
-
     public void generateChildren(BitGrid prevMask){
         final int W = mask.width;
         final int H = mask.height;
