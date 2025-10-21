@@ -3,7 +3,7 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.util.Arrays;
 
-public class BitGrid {
+public class BitGrid{
     public final int width;
     public final int height;
     private final long[] binData;
@@ -65,6 +65,50 @@ public class BitGrid {
     public boolean getBit(int x, int y){
         IndexAndMask spot = indexBit(x, y);
         return (binData[spot.index] & spot.mask) != 0;
+    }
+
+    public void setSpan(int x, int y, int length, boolean value){
+        if(y < 0 || y >= height){
+            throw new IllegalArgumentException("Y out of range: " + y);
+        }
+        if(length < 0){
+            throw new IllegalArgumentException("Length must be non-negative. \"" + length + "\" was specified.");
+        }
+        if(length == 0) return;
+        if(x < 0 || x >= width){
+            throw new IllegalArgumentException("X out of range: " + x);
+        }
+        int xEnd = x + length - 1;
+        if(xEnd < x || xEnd >= width){
+            throw new IllegalArgumentException("Span extends past row width: x=" + x + ", length=" + length + ", width=" + width);
+        }
+
+        long pixel = ((long) y) * width + x;
+        int idx = (int) (pixel >>> 6);
+        int off = (int) (pixel & 63);
+        int remaining = length;
+
+        while(remaining > 0){
+            int capacity = 64 - off;
+            int take = Math.min(remaining, capacity);
+
+            int startBit = 63 - off;
+            int endBit = startBit - (take - 1);
+
+            long left = -1L << endBit;
+            long right = -1L >>> (63 - startBit);
+            long mask = left & right;
+
+            if(value){
+                binData[idx] |= mask;
+            } else {
+                binData[idx] &= ~mask;
+            }
+
+            remaining -= take;
+            idx++;
+            off = 0;
+        }
     }
 
     public void debugFile(File location) throws IOException{

@@ -234,10 +234,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
             int localY = run.y - minY[idx];
             int startX = run.x0 - minX[idx];
             int len = run.x1 - run.x0 + 1;
-            // Paint the span
-            for (int dx = 0; dx < len; dx++) {
-                bits[idx].setBit(startX + dx, localY, true);
-            }
+            bits[idx].setSpan(startX, localY, len, true);
         }
 
         for (int i = 0; i < kept; i++) {
