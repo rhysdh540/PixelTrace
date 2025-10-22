@@ -86,6 +86,7 @@ class Main{
         ColorLayer[] layers = createLayers(original);
         Arrays.sort(layers);
         BitGrid stackedBits = new BitGrid(width, height);
+        RunCache runCache = new RunCache(stackedBits);
         BitGrid lastOpaqueBits = new BitGrid(stackedBits);
         for(int i=0; i<layers.length; i++){
             if(i % 100 == 0){
@@ -93,7 +94,7 @@ class Main{
                 System.out.flush();
             }
             int index = layers.length-1-i; //ColorLayers sorted back-to-front, but must be traced front-to-back.
-            layers[index].generateChildren(stackedBits);
+            layers[index].generateChildren(stackedBits, runCache);
             int alpha = layers[index].color >>> 24;
             if(alpha == 0xFF){
                 //Fully opaque layer
@@ -101,6 +102,7 @@ class Main{
             } else {
                 //Translucent layer
                 stackedBits = new BitGrid(lastOpaqueBits);
+                runCache = new RunCache(stackedBits);
             }
         }
         System.out.println(layers.length + " ColorLayers chunked.");

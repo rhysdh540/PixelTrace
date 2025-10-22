@@ -81,7 +81,7 @@ public class ColorLayer implements Comparable<ColorLayer>{
         return alpha_compare;
     }
 
-    public void generateChildren(BitGrid prevMask){
+    public void generateChildren(BitGrid prevMask, RunCache runCache){
         final int W = mask.width;
         final int H = mask.height;
 
@@ -89,12 +89,15 @@ public class ColorLayer implements Comparable<ColorLayer>{
         for(int y=0; y<H; y++){
             final int gy = y + y_min;
             for(int x=0; x<W; x++){
-                if(mask.getBit(x, y)) prevMask.setBit(x + x_min, gy, true);
+                if(mask.getBit(x, y)) {
+                    prevMask.setBit(x + x_min, gy, true);
+                    runCache.markRowDirty(gy);
+                }
             }
         }
 
         // collect runs of true pixels in prevMask over this layer's bounding box
-        ConnectedComponentLabeling.RunSet set = ConnectedComponentLabeling.collectRuns(prevMask, x_min, y_min, W, H, true);
+        ConnectedComponentLabeling.RunSet set = runCache.extractRuns(x_min, y_min, W, H);
         int totalRuns = set.size();
         if(totalRuns == 0){
             children = EMPTY_ISLANDS;
