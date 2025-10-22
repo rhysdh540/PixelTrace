@@ -160,11 +160,13 @@ public class ColorLayer implements Comparable<ColorLayer>{
             colorSpec += " fill-opacity=\"" + opacity + "\"";
         }
         out.print("<path " + colorSpec + " d=\"");
-        children[0].traceSVG(out);
+        StringBuilder sb = new StringBuilder();
+        children[0].traceSVG(sb);
         for(int i=1; i<children.length; i++){
-            out.print(" ");
-            children[i].traceSVG(out);
+            sb.append(" ");
+            children[i].traceSVG(sb);
         }
+        out.print(sb.toString());
         out.println("\" />");
     }
 
@@ -187,11 +189,13 @@ public class ColorLayer implements Comparable<ColorLayer>{
             out.print(",opacity=" + opacity);
         }
         out.print("]");
-        children[0].traceTikZ(out, globalHeight);
+        StringBuilder sb = new StringBuilder();
+        children[0].traceTikZ(sb, globalHeight);
         for(int i=1; i<children.length; i++){
-            out.print(" ");
-            children[i].traceTikZ(out, globalHeight);
+            sb.append(" ");
+            children[i].traceTikZ(sb, globalHeight);
         }
+        out.print(sb.toString());
         out.println(";");
     }
 }

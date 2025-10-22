@@ -126,7 +126,7 @@ public class Island {
         throw new AssertionError("Every island has at least one upper-left corner. The only way for this exception to trip is some sort of memory corruption or other catastrophic error has occurred.");
     }
 
-    public void traceSVG(ObscurePrint out) throws IOException{
+    public void traceSVG(StringBuilder out){
         long start = findUpperLeftCorner();
         int start_x = (int) (start >>> 32);
         int start_y = (int) start;
@@ -135,17 +135,17 @@ public class Island {
         int cur_x = start_x+1;
         int cur_y = start_y;
         int direction = RIGHT;
-        out.print("M " + (global_x_min + start_x) + " " + (global_y_min + start_y));
+        out.append("M " + (global_x_min + start_x) + " " + (global_y_min + start_y));
         while((cur_x != start_x) || (cur_y != start_y)){
             int turn = cornerTable.get(direction).getOrDefault(fourSquareVal(cur_x, cur_y), -1);
             if(turn >= 0){
                 if((direction == RIGHT) || (direction == LEFT)){ //Horizontal Line
-                    out.print(" h ");
-                    out.print(cur_x - prev_x);
+                    out.append(" h ");
+                    out.append(cur_x - prev_x);
                     prev_x = cur_x;
                 } else { //Vertical Line
-                    out.print(" v ");
-                    out.print(cur_y - prev_y);
+                    out.append(" v ");
+                    out.append(cur_y - prev_y);
                     prev_y = cur_y;
                 }
                 direction = turn;
@@ -158,34 +158,34 @@ public class Island {
                 default -> throw new IllegalStateException("Unexpected value: " + direction);
             }
         }
-        out.print(" z");
+        out.append(" z");
         for(Island child : children){
-            out.print(" ");
+            out.append(" ");
             child.traceSVG(out);
         }
     }
 
-    public void traceTikZ(ObscurePrint out, final int globalHeight) throws IOException {
+    public void traceTikZ(StringBuilder out, final int globalHeight){
         long start = findUpperLeftCorner();
         int start_x = (int) (start >>> 32);
         int start_y = (int) start;
         int cur_x = start_x+1;
         int cur_y = start_y;
         int direction = RIGHT;
-        out.print(" (");
-        out.print(global_x_min + start_x);
-        out.print(",");
-        out.print(globalHeight - (global_y_min + start_y));
-        out.print(")");
+        out.append(" (");
+        out.append(global_x_min + start_x);
+        out.append(",");
+        out.append(globalHeight - (global_y_min + start_y));
+        out.append(")");
         while((cur_x != start_x) || (cur_y != start_y)){
             int turn = cornerTable.get(direction).getOrDefault(fourSquareVal(cur_x, cur_y), -1);
             if(turn >= 0){
                 if((direction == DOWN) || (direction == UP)){
-                    out.print(" -| (");
-                    out.print(global_x_min + cur_x);
-                    out.print(",");
-                    out.print(globalHeight - (global_y_min + cur_y));
-                    out.print(")");
+                    out.append(" -| (");
+                    out.append(global_x_min + cur_x);
+                    out.append(",");
+                    out.append(globalHeight - (global_y_min + cur_y));
+                    out.append(")");
                 }
                 direction = turn;
             }
@@ -197,7 +197,7 @@ public class Island {
                 default -> throw new IllegalStateException("Unexpected value: " + direction);
             }
         }
-        out.print(" -| cycle");
+        out.append(" -| cycle");
         for(Island child : children) child.traceTikZ(out, globalHeight);
     }
 }
