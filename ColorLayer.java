@@ -88,11 +88,15 @@ public class ColorLayer implements Comparable<ColorLayer>{
         // merge this layer into previous (for next layer's processing)
         for(int y=0; y<H; y++){
             final int gy = y + y_min;
-            for(int x=0; x<W; x++){
-                if(mask.getBit(x, y)) {
-                    prevMask.setBit(x + x_min, gy, true);
-                    runCache.markRowDirty(gy);
-                }
+            final boolean[] dirty = new boolean[]{false};
+            mask.scanRowRuns(y, (x0, x1) -> {
+                int gx0 = x0 + x_min;
+                int len = (x1 - x0 + 1);
+                prevMask.setSpan(gx0, gy, len, true);
+                dirty[0] = true;
+            });
+            if(dirty[0]){
+                runCache.markRowDirty(gy);
             }
         }
 
@@ -109,12 +113,9 @@ public class ColorLayer implements Comparable<ColorLayer>{
         for(int idx=0; idx<totalRuns; idx++){
             ConnectedComponentLabeling.Run r = set.runs().get(idx);
             int y = r.y();
-            // short-circuit scan: any bit of current color mask within run range
-            for(int x=r.x0(); x<=r.x1(); x++){
-                if(mask.getBit(x, y)){
-                    touches[idx] = true;
-                    break;
-                }
+            int len = r.x1() - r.x0() + 1;
+            if(mask.anySetInSpan(r.x0(), y, len)){
+                touches[idx] = true;
             }
         }
 

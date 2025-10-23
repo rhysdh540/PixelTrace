@@ -111,6 +111,109 @@ public class BitGrid{
         }
     }
 
+    public boolean anySetInSpan(int x, int y, int length){
+        if(y < 0 || y >= height){
+            throw new IllegalArgumentException("Y out of range: " + y);
+        }
+        if(length < 0){
+            throw new IllegalArgumentException("Length must be non-negative. \"" + length + "\" was specified.");
+        }
+        if(length == 0) return false;
+        if(x < 0 || x >= width){
+            throw new IllegalArgumentException("X out of range: " + x);
+        }
+        int xEnd = x + length - 1;
+        if(xEnd < x || xEnd >= width){
+            throw new IllegalArgumentException("Span extends past row width: x=" + x + ", length=" + length + ", width=" + width);
+        }
+
+        long pixel = ((long) y) * width + x;
+        int idx = (int)(pixel >>> 6);
+        int off = (int)(pixel & 63);
+        int remaining = length;
+        while(remaining > 0){
+            int capacity = 64 - off;
+            int take = Math.min(remaining, capacity);
+            long w = binData[idx];
+            long topMask = (take == 64) ? -1L : (-1L << (64 - take));
+            long seg = (w << off) & topMask;
+            if(seg != 0L) return true;
+            remaining -= take;
+            idx++;
+            off = 0;
+        }
+        return false;
+    }
+
+    public interface RunHandler {
+        void onRun(int x0, int x1);
+    }
+
+    public void scanRowRuns(int y, RunHandler handler){
+        if(y < 0 || y >= height){
+            throw new IllegalArgumentException("Y out of range: " + y);
+        }
+        final int rowWidth = this.width;
+        if(rowWidth == 0){
+            return;
+        }
+        final long rowStartPixel = ((long) y) * rowWidth;
+        int x = 0; // local x within the row
+        boolean inRun = false;
+        int runStart = -1;
+
+        while(x < rowWidth){
+            long pixel = rowStartPixel + x;
+            int idx = (int)(pixel >>> 6);
+            int off = (int)(pixel & 63);
+            int remaining = rowWidth - x;
+            int lenWord = Math.min(64 - off, remaining);
+
+            long w = binData[idx];
+            long topMask = (lenWord == 64) ? -1L : (-1L << (64 - lenWord));
+            long seg = (w << off) & topMask; // segment aligned so MSB corresponds to x
+
+            if(!inRun){
+                if(seg == 0L){
+                    x += lenWord;
+                    continue;
+                }
+                int leadZeros = Long.numberOfLeadingZeros(seg);
+                int zerosToSkip = Math.min(leadZeros, lenWord);
+                x += zerosToSkip;
+                if(zerosToSkip == lenWord){
+                    continue; // only zeros in this segment
+                }
+                inRun = true;
+                runStart = x;
+
+                long shifted = seg << zerosToSkip;
+                int onesHere = Math.min(Long.numberOfLeadingZeros(~shifted), lenWord - zerosToSkip);
+                x += onesHere;
+                if(onesHere < (lenWord - zerosToSkip)){
+                    handler.onRun(runStart, x - 1);
+                    inRun = false;
+                }
+            } else {
+                boolean msbIsOne = (seg & Long.MIN_VALUE) != 0L;
+                if(!msbIsOne){
+                    handler.onRun(runStart, x - 1);
+                    inRun = false;
+                    continue;
+                }
+                int onesHere = Math.min(Long.numberOfLeadingZeros(~seg), lenWord);
+                x += onesHere;
+                if(onesHere < lenWord){
+                    handler.onRun(runStart, x - 1);
+                    inRun = false;
+                }
+            }
+        }
+        if(inRun){
+            handler.onRun(runStart, rowWidth - 1);
+        }
+    }
+
     public void debugFile(File location) throws IOException{
         BufferedImage canvas = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY);
         for(int y=0; y<height; y++){

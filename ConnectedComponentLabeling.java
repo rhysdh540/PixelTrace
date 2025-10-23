@@ -18,17 +18,31 @@ public final class ConnectedComponentLabeling{
         final int[] rowEnds = new int[h];
         for(int y=0; y<h; y++){
             rowStarts[y] = runs.size();
-            int x = 0;
-            while(x < w){
-                // find start of a run
-                while(x < w && (grid.getBit(xOff + x, yOff + y) != targetValue)) x++;
-                if(x >= w) break;
-                int x0 = x;
-                do {
-                    x++;
-                } while(x < w && (grid.getBit(xOff + x, yOff + y) == targetValue));
-                int x1 = x - 1;
-                runs.add(new Run(y, x0, x1));
+            final int absY = yOff + y;
+            final int ly = y;
+            if(targetValue){
+                grid.scanRowRuns(absY, (x0, x1) -> {
+                    int lx0 = Math.max(0, x0 - xOff);
+                    int lx1 = Math.min(w - 1, x1 - xOff);
+                    if(lx0 <= lx1){
+                        runs.add(new Run(ly, lx0, lx1));
+                    }
+                });
+            } else {
+                final int[] prev = new int[]{0};
+                grid.scanRowRuns(absY, (x0, x1) -> {
+                    int lx0 = Math.max(0, x0 - xOff);
+                    int lx1 = Math.min(w - 1, x1 - xOff);
+                    if(lx0 <= lx1){
+                        if(lx0 > prev[0]){
+                            runs.add(new Run(ly, prev[0], lx0 - 1));
+                        }
+                        prev[0] = lx1 + 1;
+                    }
+                });
+                if(prev[0] < w){
+                    runs.add(new Run(ly, prev[0], w - 1));
+                }
             }
             rowEnds[y] = runs.size();
         }
